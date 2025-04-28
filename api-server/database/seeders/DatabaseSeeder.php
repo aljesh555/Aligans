@@ -29,8 +29,6 @@ class DatabaseSeeder extends Seeder
             TeamSeeder::class,
             EventSeeder::class,
             PlayerSeeder::class,
-            AttendanceSeeder::class,
-            SalarySeeder::class,
         ]);
     }
 }

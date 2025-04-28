@@ -21,11 +21,11 @@ class ProductResource extends Resource
     protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
-    
+
     protected static ?string $navigationGroup = 'Shop Management';
-    
+
     protected static ?int $navigationSort = 3;
-    
+
     protected static ?string $recordTitleAttribute = 'name';
 
     public static function form(Form $form): Form
@@ -42,17 +42,17 @@ class ProductResource extends Resource
                                             ->required()
                                             ->maxLength(255)
                                             ->live(onBlur: true)
-                                            ->afterStateUpdated(fn (Forms\Set $set, ?string $state) => 
+                                            ->afterStateUpdated(fn (Forms\Set $set, ?string $state) =>
                                                 $set('slug', Str::slug($state)))
                                             ->columnSpan(1),
-                                        
+
                                         Forms\Components\TextInput::make('slug')
                                             ->required()
                                             ->maxLength(255)
                                             ->unique(ignoreRecord: true)
                                             ->columnSpan(1),
                                     ]),
-                                
+
                                 Forms\Components\Grid::make(2)
                                     ->schema([
                                         Forms\Components\Select::make('category_id')
@@ -68,7 +68,7 @@ class ProductResource extends Resource
                                                     ->maxLength(1000),
                                             ])
                                             ->columnSpan(1),
-                                        
+
                                         Forms\Components\TextInput::make('sku')
                                             ->label('SKU (Stock Keeping Unit)')
                                             ->helperText('A unique identifier for this product')
@@ -76,7 +76,7 @@ class ProductResource extends Resource
                                             ->unique(ignoreRecord: true)
                                             ->columnSpan(1),
                                     ]),
-                                
+
                                 Forms\Components\Grid::make(1)
                                     ->schema([
                                         Forms\Components\Select::make('status')
@@ -90,14 +90,14 @@ class ProductResource extends Resource
                                             ->required()
                                             ->columnSpan(1),
                                     ]),
-                                
+
                                 Forms\Components\Textarea::make('short_description')
                                     ->label('Short Description')
                                     ->helperText('A brief summary displayed in product listings (max 500 characters)')
                                     ->maxLength(500)
                                     ->rows(3)
                                     ->columnSpanFull(),
-                                
+
                                 Forms\Components\RichEditor::make('description')
                                     ->label('Full Description')
                                     ->helperText('Detailed product information displayed on the product page')
@@ -117,7 +117,7 @@ class ProductResource extends Resource
                                     ])
                                     ->columnSpanFull(),
                             ]),
-                        
+
                         Forms\Components\Tabs\Tab::make('Pricing & Inventory')
                             ->schema([
                                 Forms\Components\Section::make('Pricing Information')
@@ -131,20 +131,20 @@ class ProductResource extends Resource
                                                     ->step(0.01)
                                                     ->minValue(0)
                                                     ->columnSpan(1),
-                                                
+
                                                 Forms\Components\Toggle::make('on_sale')
                                                     ->label('On Sale')
                                                     ->helperText('Toggle to enable sale pricing')
                                                     ->default(false)
                                                     ->reactive()
                                                     ->columnSpan(1),
-                                                
+
                                                 Forms\Components\Placeholder::make('price_notice')
                                                     ->content('Configure sale details in the fields below when "On Sale" is enabled')
                                                     ->visible(fn (Forms\Get $get) => !$get('on_sale'))
                                                     ->columnSpan(1),
                                             ]),
-                                        
+
                                         Forms\Components\Grid::make(3)
                                             ->schema([
                                                 Forms\Components\TextInput::make('discount_price')
@@ -163,7 +163,7 @@ class ProductResource extends Resource
                                                         }
                                                     })
                                                     ->columnSpan(1),
-                                                
+
                                                 Forms\Components\TextInput::make('discount_percent')
                                                     ->label('Discount Percentage')
                                                     ->numeric()
@@ -180,7 +180,7 @@ class ProductResource extends Resource
                                                         }
                                                     })
                                                     ->columnSpan(1),
-                                                
+
                                                 Forms\Components\DateTimePicker::make('sale_ends_at')
                                                     ->label('Sale Ends At')
                                                     ->helperText('Leave empty for no end date')
@@ -188,7 +188,7 @@ class ProductResource extends Resource
                                                     ->columnSpan(1),
                                             ]),
                                     ]),
-                                
+
                                 Forms\Components\Section::make('Inventory Management')
                                     ->schema([
                                         Forms\Components\TextInput::make('stock')
@@ -199,7 +199,7 @@ class ProductResource extends Resource
                                             ->minValue(0)
                                             ->required(),
                                     ]),
-                                
+
                                 Forms\Components\Section::make('Product Flags')
                                     ->schema([
                                         Forms\Components\Grid::make(2)
@@ -208,7 +208,7 @@ class ProductResource extends Resource
                                                     ->label('Featured Product')
                                                     ->helperText('Featured products will be displayed on the homepage')
                                                     ->default(false),
-                                                
+
                                                 Forms\Components\Toggle::make('is_new_arrival')
                                                     ->label('New Arrival')
                                                     ->helperText('New arrivals will be displayed in the new arrivals section')
@@ -216,7 +216,7 @@ class ProductResource extends Resource
                                             ]),
                                     ]),
                             ]),
-                        
+
                         Forms\Components\Tabs\Tab::make('Media')
                             ->schema([
                                 Forms\Components\Section::make('Product Images')
@@ -232,7 +232,7 @@ class ProductResource extends Resource
                                             ->columnSpanFull(),
                                     ]),
                             ]),
-                            
+
                         Forms\Components\Tabs\Tab::make('Variants')
                             ->schema([
                                 Forms\Components\Section::make('Product Variants')
@@ -249,14 +249,14 @@ class ProductResource extends Resource
                                                     ->required(),
                                             ])
                                             ->columns(2)
-                                            ->itemLabel(fn (array $state): ?string => 
+                                            ->itemLabel(fn (array $state): ?string =>
                                                 $state['attribute'] ? "{$state['attribute']}: {$state['value']}" : null)
                                             ->addActionLabel('Add Variant Attribute')
                                             ->reorderable()
                                             ->collapsible()
                                     ]),
                             ]),
-                        
+
                         Forms\Components\Tabs\Tab::make('SEO & Metadata')
                             ->schema([
                                 Forms\Components\Section::make('Search Engine Optimization')
@@ -266,13 +266,13 @@ class ProductResource extends Resource
                                             ->label('Meta Title')
                                             ->helperText('Custom title tag for this product (defaults to product name if empty)')
                                             ->maxLength(70),
-                                        
+
                                         Forms\Components\Textarea::make('meta_description')
                                             ->label('Meta Description')
                                             ->helperText('Brief description appearing in search results (max 160 characters)')
                                             ->maxLength(160)
                                             ->rows(2),
-                                        
+
                                         Forms\Components\TagsInput::make('meta_keywords')
                                             ->label('Meta Keywords')
                                             ->helperText('Keywords relevant to this product, separated by commas')
@@ -291,29 +291,29 @@ class ProductResource extends Resource
                 Tables\Columns\ImageColumn::make('image_url')
                     ->label('Image')
                     ->circular(),
-                
+
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable()
                     ->limit(30),
-                
+
                 Tables\Columns\TextColumn::make('category.name')
                     ->label('Category')
                     ->sortable(),
-                
+
                 Tables\Columns\IconColumn::make('has_variants')
                     ->label('Has Variants')
                     ->boolean()
-                    ->getStateUsing(fn (Product $record): bool => 
+                    ->getStateUsing(fn (Product $record): bool =>
                         !empty($record->variants))
                     ->trueIcon('heroicon-o-check-badge')
                     ->falseIcon('heroicon-o-minus-small')
                     ->size('md'),
-                
+
                 Tables\Columns\TextColumn::make('price')
                     ->money('USD')
                     ->sortable(),
-                
+
                 Tables\Columns\TextColumn::make('stock')
                     ->sortable()
                     ->badge()
@@ -322,21 +322,21 @@ class ProductResource extends Resource
                         $state <= 5 => 'warning',
                         default => 'success',
                     }),
-                
+
                 Tables\Columns\IconColumn::make('on_sale')
                     ->label('On Sale')
                     ->boolean()
                     ->trueIcon('heroicon-o-tag')
                     ->falseIcon('heroicon-o-x-mark'),
-                
+
                 Tables\Columns\IconColumn::make('featured')
                     ->label('Featured')
-                    ->boolean(), 
-                    
+                    ->boolean(),
+
                 Tables\Columns\IconColumn::make('is_new_arrival')
                     ->label('New Arrival')
                     ->boolean(),
-                
+
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -346,7 +346,7 @@ class ProductResource extends Resource
                         'discontinued' => 'gray',
                         default => 'gray',
                     }),
-                
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -357,7 +357,7 @@ class ProductResource extends Resource
                     ->relationship('category', 'name')
                     ->searchable()
                     ->preload(),
-                
+
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'active' => 'Active',
@@ -365,13 +365,13 @@ class ProductResource extends Resource
                         'out_of_stock' => 'Out of Stock',
                         'discontinued' => 'Discontinued',
                     ]),
-                
+
                 Tables\Filters\TernaryFilter::make('on_sale')
                     ->label('On Sale'),
-                
+
                 Tables\Filters\TernaryFilter::make('featured')
                     ->label('Featured'),
-                
+
                 Tables\Filters\TernaryFilter::make('is_new_arrival')
                     ->label('New Arrival'),
             ])
@@ -410,7 +410,7 @@ class ProductResource extends Resource
             'edit' => Pages\EditProduct::route('/{record}/edit'),
         ];
     }
-    
+
     public static function getNavigationBadge(): ?string
     {
         return static::getModel()::count();
