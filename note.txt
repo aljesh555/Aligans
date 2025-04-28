@@ -1,0 +1,18 @@
+ENVIRONMENT NOTES
+
+- Working in Windows (not Linux)
+- Project is for Nepal
+
+SERVER COMMANDS:
+
+To Run API Server :cd api-server; php artisan serve
+
+To Run SPA Client: cd spa-client ; npm run serve
+
+IMPORTANT:
+- Always navigate to the correct directory before running commands
+- Commands must be run in separate terminals or background processes
+- Windows paths use backslashes but the commands above use forward slashes which is fine
+
+API ENDPOINTS:
+- Customer Care Data: http://127.0.0.1:8000/api/settings/customer-care

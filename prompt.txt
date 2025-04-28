@@ -1,0 +1,104 @@
+# Aligans Project - Prompt History
+
+## Prompt 1: Project Setup and Requirements
+```
+This system will manage sports product sales, multi-branch inventory, HR/staff operations, team/event registration, and customer orders. Products are categorized and stock is maintained per branch. Customers can shop online, add multiple items to a cart, and place orders. The platform will also support organizing sports events and registering teams (local to national level) with player details. HR functions include employee roles, attendance, and salary records. The system is scalable, multi-branch-ready, and role-based for admin, manager, staff, and customers.
+
+Models & Fields 
+User (id, name, email, password, phone, role, branch_id)
+Branch (id, name, location, contact_no)
+Category (id, name)
+Product (id, name, description, price, category_id, image_url)
+ProductStock (id, product_id, branch_id, quantity)
+Cart (id, user_id)
+CartItem (id, cart_id, product_id, quantity)
+Order (id, user_id, branch_id, total_amount, status)
+OrderItem (id, order_id, product_id, quantity, unit_price)
+Event (id, name, description, location, date, entry_fee, created_by)
+Team (id, name, region, level, coach_name)
+EventTeam (id, event_id, team_id)
+Player (id, team_id, name, position, age)
+Attendance (id, user_id, date, status)
+Salary (id, user_id, month, amount, paid)
+
+
+grow more into that, i didn't put very much thought into it.. but i need it to be comprehensive and scalable.
+```
+
+## Prompt 2: Project Structure Creation
+```
+now.. create 4 folders.. 
+1. laravel api server
+2. mobile/flutter application
+3. admin dashboard
+4. web application, SPA
+
+all folders should be inside this D:/aligans.. if you are missing any dependencies while doing the installations, just go ahead and install them..
+
+when you are done, i'd like to see 4 folders, with applications inside of them.
+
+and as you go, log the progress in AIProgress.txt file, on this directory, so that if you get interruped, you can continue from where you left off.
+```
+
+## Prompt 3: Focus on Laravel API Server
+```
+for now, lets create the wrapper for everything, but complete the laravel api server first.
+```
+
+## Prompt 4: Request for AttendanceSeeder Class
+- Request: Create the `AttendanceSeeder` class for seeding attendance records for players in the database
+- Action: Created complete code for the `AttendanceSeeder` class with methods to generate attendance records for today, yesterday, and two days ago, using the Carbon library for date handling
+
+## Prompt 5: Route File Update Request
+- Request: Update the routes file to reorganize public endpoints under a new StorefrontController
+- Action: Read and analyzed the routes file (api-server/routes/api.php) and StorefrontController implementation
+
+## Prompt 6: Error Component Investigation
+- Request: Investigate a specific error component within the components directory
+- Action: Checked components directory (spa-client/src/components), checked views directory (spa-client/src/views), and router configuration (spa-client/src/router/index.js)
+- Result: Created a NotFound.vue component and updated router to handle 404 errors
+
+## Prompt 7: Project Structure Documentation
+- Request: "Can you create: Project Structure and put there entire project structure"
+- Action: Created comprehensive ProjectStructure.md file documenting backend and frontend architecture
+
+## Prompt 8: Project Structure Validation
+- Request: Review of proposed project structure for e-commerce focus (differing from current sports management implementation)
+- Action: Compared proposed structure with actual implementation and provided recommendations
+
+## Prompt 9: Project Structure File Creation
+- Request: "Put structure of the entire project in project_structure.txt and you need to add if some files or folder added or updated to this file"
+- Action: Created detailed project_structure.txt documenting current project structure
+
+## Prompt 10: API Readiness Question
+- Request: "I have question for you that Our api-server is ready to create mobile-app and spa-client"
+- Action: Analyzed existing API structure and confirmed readiness for both SPA and mobile app development
+
+## Prompt 11: Prompt History Creation
+- Request: "Now again you need to create a file to store all the prompt from the first to here - prompt.txt"
+- Action: Created this file (prompt.txt) capturing all conversation history
+
+## Prompt 12: First Prompt Verification
+- Request: "Do you know the first prompt given?"
+- Action: Identified what I thought was the first prompt (AttendanceSeeder request)
+- Correction: User provided the actual first three prompts which have now been added to this file
+
+## Prompt 13: Project Structure Review
+- Request: "Now Review the structure of the project that is correct to the structure file or not"
+- Action: Compared project_structure.txt with actual project structure and updated it to reflect reality
+
+## Prompt 14: File Deletion Updates
+- Request: "I have removed the file TailwindTest.vue, NotFound.vue but it is still in the structure it should be live update"
+- Action: Updated project_structure.txt and ProjectStructure.md to reflect deleted files
+
+## Prompt 15: File Deletion and Updates Request
+- Request: "I have deleted the file project_structure.txt now you need to update 3 files live you know: prompt.txt, ProjectStructure.md, AIProgress.txt"
+- Action: Updated all three files to reflect that project_structure.txt has been deleted
+
+## Prompt 16: Router Configuration Fix
+- Request: "We have tailwind.config.js then it will run all the tiwind.css also right. Issue in: Compiled with problems - ERROR Module not found: Can't resolve '../views/TailwindTest.vue' and '../views/NotFound.vue'"
+- Action: Fixed router configuration by removing references to deleted files and updating the 404 route to redirect to Home instead of using a NotFound component
+
+## Environment Information
+- Laravel API server running on: http://127.0.0.1:8000
+- SPA client intended to run on: http://localhost:8088 
