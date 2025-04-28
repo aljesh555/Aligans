@@ -18,7 +18,7 @@ class SettingResource extends Resource
     protected static ?string $model = Setting::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-cog';
-    
+
     protected static ?string $navigationLabel = 'Settings';
 
     public static function form(Form $form): Form
@@ -32,16 +32,17 @@ class SettingResource extends Resource
                     ->required()
                     ->options([
                         'string' => 'String',
-                        'integer' => 'Integer',
-                        'boolean' => 'Boolean',
-                        'json' => 'JSON',
-                        'array' => 'Array',
+                        'repeater' => 'Repeater',
+                        'image' => 'Image',
+                        'file' => 'File',
                     ])
-                    ->default('string')
+                    // ->default('repeater')
                     ->live()
                     ->afterStateUpdated(function ($state, $set) {
-                        if ($state === 'json') {
-                            $set('value', '{"":""}');
+                        if ($state === 'repeater') {
+                            $set('value', []);
+                        } else {
+                            $set('value', '');
                         }
                     }),
                 Forms\Components\Select::make('group')
@@ -56,20 +57,35 @@ class SettingResource extends Resource
                     ->default('general'),
                 Forms\Components\TextInput::make('description')
                     ->maxLength(255),
-                Forms\Components\Card::make()
+                Forms\Components\Section::make()
                     ->schema([
-                        Forms\Components\Textarea::make('value')
-                            ->label(function ($get) {
-                                return $get('type') === 'json' 
-                                    ? 'Value (JSON Format)' 
-                                    : 'Value';
+                        Forms\Components\FileUpload::make('fileValue')
+                            ->visible(function ($get) {
+                                return $get('type') === 'image' || $get('type') === 'file';
                             })
-                            ->helperText(function ($get) {
-                                return $get('type') === 'json'
-                                    ? 'For social media, enter JSON like: {"facebook":"https://facebook.com/page", "instagram":"https://instagram.com/user"}'
-                                    : 'Enter the setting value';
+                            ->required(function ($get) {
+                                return $get('type') === 'image' || $get('type') === 'file';
+                            }),
+                        Forms\Components\TextInput::make('stringValue')
+                            ->required()
+                            ->visible(function ($get) {
+                                return $get('type') === 'string';
                             })
-                            ->columnSpanFull(),
+                            ->required(function ($get) {
+                                return $get('type') === 'string';
+                            })
+                            ->maxLength(255),
+                        Forms\Components\Repeater::make('repeaterValue')
+                            ->schema([
+                                Forms\Components\TextInput::make('key')->required(),
+                                Forms\Components\TextInput::make('value')->required()
+                            ])
+                            ->visible(function ($get) {
+                                return $get('type') === 'repeater';
+                            })
+                            ->required(function ($get) {
+                                return $get('type') === 'repeater';
+                            }),
                     ]),
             ]);
     }
@@ -128,7 +144,6 @@ class SettingResource extends Resource
             'index' => Pages\ListSettings::route('/'),
             'create' => Pages\CreateSetting::route('/create'),
             'edit' => Pages\EditSetting::route('/{record}/edit'),
-            'social-media' => Pages\SocialMediaSettings::route('/social-media'),
         ];
     }
 }

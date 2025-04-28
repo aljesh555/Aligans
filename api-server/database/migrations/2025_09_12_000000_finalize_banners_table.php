@@ -48,9 +48,9 @@ return new class extends Migration
         // Then handle the data migration if needed
         if (Schema::hasColumn('banners', 'image_url')) {
             DB::statement('UPDATE banners SET image = image_url WHERE image IS NULL AND image_url IS NOT NULL');
-            
+
             Schema::table('banners', function (Blueprint $table) {
-                $table->dropColumn('image_url');
+                // $table->dropColumn('image_url');
             });
         }
     }
@@ -65,11 +65,11 @@ return new class extends Migration
         Schema::table('banners', function (Blueprint $table) {
             if (!Schema::hasColumn('banners', 'image_url')) {
                 $table->string('image_url')->nullable();
-                
+
                 // Copy data back if needed
                 DB::statement('UPDATE banners SET image_url = image WHERE image_url IS NULL AND image IS NOT NULL');
             }
-            
+
             $table->dropColumn([
                 'image',
                 'title',
@@ -83,4 +83,4 @@ return new class extends Migration
             ]);
         });
     }
-}; 
+};
