@@ -349,7 +349,7 @@
                           <span v-if="item.size && item.color"> | </span>
                           <span v-if="item.color">Color: {{ item.color }}</span>
                         </div>
-                        <p class="text-sm font-medium text-gray-900 mt-1">${{ (item.price * item.quantity).toFixed(2) }}</p>
+                        <p class="text-sm font-medium text-gray-900 mt-1">Rs. {{ (item.price * item.quantity).toFixed(2) }}</p>
                       </div>
                     </div>
                   </div>
@@ -358,23 +358,23 @@
                   <div class="border-t border-gray-200 pt-4 space-y-2">
                     <div class="flex justify-between text-sm">
                       <span class="text-gray-600">Subtotal</span>
-                      <span class="font-medium">${{ subtotal.toFixed(2) }}</span>
+                      <span class="font-medium">Rs. {{ subtotal.toFixed(2) }}</span>
                     </div>
                     
                     <div class="flex justify-between text-sm">
                       <span class="text-gray-600">Shipping</span>
-                      <span class="font-medium">{{ shipping > 0 ? '$' + shipping.toFixed(2) : 'Free' }}</span>
+                      <span class="font-medium">{{ shipping > 0 ? 'Rs. ' + shipping.toFixed(2) : 'Free' }}</span>
                     </div>
                     
                     <div class="flex justify-between text-sm">
                       <span class="text-gray-600">Tax</span>
-                      <span class="font-medium">${{ tax.toFixed(2) }}</span>
+                      <span class="font-medium">Rs. {{ tax.toFixed(2) }}</span>
                     </div>
                     
                     <div class="border-t border-gray-200 pt-2 mt-2">
                       <div class="flex justify-between font-bold">
                         <span>Total</span>
-                        <span>${{ orderTotal.toFixed(2) }}</span>
+                        <span>Rs. {{ orderTotal.toFixed(2) }}</span>
                       </div>
                     </div>
                   </div>

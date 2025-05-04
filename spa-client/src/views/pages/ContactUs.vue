@@ -116,10 +116,10 @@
             </div>
             
             <!-- Contact Information -->
-          <div class="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8">
-            <!-- Office Info - Dynamic -->
+          <div class="mt-16">
+            <!-- Combined Customer Care Info -->
             <div class="bg-white p-6 rounded-lg shadow-md">
-              <h2 class="text-xl font-semibold mb-4">Our Office</h2>
+              <h2 class="text-xl font-semibold mb-4">Contact Information</h2>
               
               <!-- Loading state -->
               <div v-if="customerCareLoading" class="animate-pulse space-y-3">
@@ -129,8 +129,11 @@
               </div>
               
               <!-- Content when loaded -->
-              <div v-else class="space-y-3">
-                <div v-if="customerCare.address" class="flex items-start">
+              <div v-else class="space-y-6">
+                <!-- Contact Details -->
+                <div class="space-y-3">
+                  <!-- Address -->
+                  <div class="flex items-start">
                   <div class="flex-shrink-0 mt-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -138,32 +141,39 @@
                     </svg>
                   </div>
                   <div class="ml-3">
-                    <p class="text-sm text-gray-700" v-html="formatAddress(customerCare.address)"></p>
+                      <p class="text-sm text-gray-700" v-html="formatAddress(customerCare.address || 'santingar, Baneshwor, Kathmandu, Nepal')"></p>
                   </div>
                 </div>
                 
-                <div v-if="customerCare.email" class="flex items-center">
+                  <!-- Email -->
+                  <div class="flex items-center">
                   <div class="flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   </div>
                   <div class="ml-3">
-                    <a :href="'mailto:' + customerCare.email" class="text-sm text-blue-600 hover:underline">{{ customerCare.email }}</a>
+                      <a :href="'mailto:' + (customerCare.email || 'care@yourstore.com')" class="text-sm text-blue-600 hover:underline">
+                        {{ customerCare.email || 'care@yourstore.com' }}
+                      </a>
                   </div>
                 </div>
                 
-                <div v-if="customerCare.phone" class="flex items-center">
+                  <!-- Phone -->
+                  <div class="flex items-center">
                   <div class="flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
                   </div>
                   <div class="ml-3">
-                    <a :href="'tel:' + customerCare.phone.replace(/[^0-9+]/g, '')" class="text-sm text-blue-600 hover:underline">{{ customerCare.phone }}</a>
+                      <a :href="'tel:' + (customerCare.phone ? customerCare.phone.replace(/[^0-9+]/g, '') : '+9771444444')" class="text-sm text-blue-600 hover:underline">
+                        {{ customerCare.phone || '+977-1-4444444' }}
+                      </a>
                   </div>
                 </div>
                 
+                  <!-- WhatsApp - only if available -->
                 <div v-if="customerCare.whatsapp" class="flex items-center">
                   <div class="flex-shrink-0">
                     <svg class="h-5 w-5 text-gray-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -175,6 +185,7 @@
                   </div>
                 </div>
                 
+                  <!-- Viber - only if available -->
                 <div v-if="customerCare.viber" class="flex items-center">
                   <div class="flex-shrink-0">
                     <svg class="h-5 w-5 text-gray-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -185,30 +196,23 @@
                   </div>
                   <div class="ml-3">
                     <a :href="viberUrl" target="_blank" class="text-sm text-blue-600 hover:underline">{{ customerCare.viber }}</a>
-                  </div>
                 </div>
               </div>
             </div>
               
-            <!-- Business Hours - Dynamic -->
-            <div class="bg-white p-6 rounded-lg shadow-md">
-              <h2 class="text-xl font-semibold mb-4">Business Hours</h2>
+                <!-- Business Hours -->
+                <div>
+                  <h3 class="text-lg font-medium mb-3">Business Hours</h3>
               
-              <!-- Loading state -->
-              <div v-if="customerCareLoading" class="animate-pulse space-y-3">
-                <div class="bg-gray-200 h-4 w-3/4 rounded"></div>
-                <div class="bg-gray-200 h-4 w-2/3 rounded"></div>
-                <div class="bg-gray-200 h-4 w-4/5 rounded"></div>
-              </div>
-              
-              <!-- Content when loaded -->
-              <div v-else class="space-y-2">
+                  <div class="space-y-2">
+                    <!-- When timings are available -->
                 <div v-if="customerCare.timings" class="space-y-2">
                   <div v-for="(timing, index) in formattedTimings" :key="index" class="flex justify-between">
-                    <span class="text-sm text-gray-600">{{ timing.days }}:</span>
+                        <span class="text-sm text-gray-600">{{ timing.days }}</span>
                     <span class="text-sm text-gray-900 font-medium">{{ timing.hours }}</span>
                   </div>
                 </div>
+                    <!-- Default hours as fallback -->
                 <div v-else>
                   <div class="flex justify-between">
                     <span class="text-sm text-gray-600">Monday - Friday:</span>
@@ -221,6 +225,7 @@
                   <div class="flex justify-between">
                     <span class="text-sm text-gray-600">Sunday:</span>
                     <span class="text-sm text-gray-900 font-medium">Closed</span>
+                      </div>
                   </div>
                 </div>
                 
@@ -228,6 +233,7 @@
                 <p class="text-sm text-gray-600">
                   For customer support outside these hours, please send us an email or leave a message using the form above, and we'll get back to you as soon as possible.
                 </p>
+                </div>
               </div>
             </div>
           </div>
@@ -260,6 +266,7 @@
 import axios from 'axios';
 import Header from '@/components/Header.vue';
 import Footer from '@/components/layout/Footer.vue';
+import { API_URL } from '@/services/config';
 
 export default {
   name: 'ContactUs',
@@ -295,18 +302,37 @@ export default {
   computed: {
     // Compute formatted timings from the timings string
     formattedTimings() {
-      if (!this.customerCare.timings) return [];
+      if (!this.customerCare || !this.customerCare.timings) return [];
       
       // Try to parse business hours into a structured format
-      // This assumes the timings are in format like "Monday-Friday: 9AM-6PM, Saturday: 10AM-4PM, Sunday: Closed"
+      // This handles different formats like:
+      // "Monday-Friday: 9AM-6PM, Saturday: 10AM-4PM, Sunday: Closed"
+      // or "10AM to 10PM" or any custom format
       try {
+        // Check if there are commas indicating multiple entries
+        if (this.customerCare.timings.includes(',')) {
         const timingParts = this.customerCare.timings.split(',').map(t => t.trim());
         return timingParts.map(part => {
+            // Check if there's a colon indicating day: hours format
+            if (part.includes(':')) {
           const [days, hours] = part.split(':').map(p => p.trim());
           return { days, hours };
-        });
+            } else {
+              // If no colon, treat the whole thing as a single entry
+              return { days: 'Business Hours', hours: part };
+            }
+          });
+        } else if (this.customerCare.timings.includes(':')) {
+          // Single day: hours format
+          const [days, hours] = this.customerCare.timings.split(':').map(p => p.trim());
+          return [{ days, hours }];
+        } else {
+          // Simple format like "10AM to 10PM"
+          return [{ days: 'Business Hours', hours: this.customerCare.timings }];
+        }
       } catch (e) {
         console.error('Error parsing timings:', e);
+        // Fallback to showing the raw string
         return [{ days: 'Business Hours', hours: this.customerCare.timings }];
     }
   },
@@ -337,7 +363,7 @@ export default {
       this.generalError = null;
       
       try {
-        const response = await axios.post('http://127.0.0.1:8000/api/contact', this.form);
+        const response = await axios.post(`${API_URL}/contact`, this.form);
         
         if (response.data.success) {
           this.formSubmitted = true;
@@ -381,7 +407,14 @@ export default {
       try {
         this.customerCareLoading = true;
         console.log('Fetching customer care from API...');
-        const response = await axios.get('http://127.0.0.1:8000/api/settings/customer-care');
+        const response = await axios.get(`${API_URL}/settings/customer-care`);
+        
+        console.log('Raw customer care response:', response.data);
+        
+        // Debug the exact structure
+        if (response.data && response.data.data && response.data.data.customer_care) {
+          console.log('Raw customer_care data:', JSON.stringify(response.data.data.customer_care));
+        }
         
         if (!response.data || !response.data.success) {
           console.error('Invalid response from API');
@@ -391,6 +424,7 @@ export default {
         
         // Extract the data from the API response
         const settings = response.data.data;
+        console.log('Settings data:', settings);
         
         if (!settings || !settings.customer_care) {
           console.error('No customer_care setting in the response');
@@ -398,31 +432,106 @@ export default {
           return;
         }
         
-        // Parse the JSON value if it's a string
+        // Get the customer care data
         let customerCareData = settings.customer_care;
+        
+        // Initialize an empty customer care object
+        const mappedData = {
+          timings: '',
+          phone: '',
+          email: '',
+          address: ''
+        };
+        
+        // Variables to store day and time separately
+        let day = '';
+        let time = '';
+        
+        // Parse if string (important step)
         if (typeof customerCareData === 'string') {
           try {
+            console.log('Parsing customer_care string data');
             customerCareData = JSON.parse(customerCareData);
+            console.log('Parsed successfully:', customerCareData);
           } catch (e) {
-            console.error('Error parsing customer care JSON:', e);
+            console.error('Failed to parse customer_care JSON string:', e);
             this.customerCareLoading = false;
             return;
           }
         }
         
-        // Map the JSON data to our customer care object
+        // Process the data based on its format
+        if (Array.isArray(customerCareData)) {
+          console.log('Processing array format with', customerCareData.length, 'items');
+          
+          // Process repeater format (array of key-value pairs)
+          for (const item of customerCareData) {
+            console.log('Processing item:', item);
+            
+            // Extract key and value using appropriate properties
+            // Support both uppercase and lowercase property names
+            const key = (item.Key || item.key || '').toLowerCase();
+            const value = item.Value || item.value || '';
+            
+            console.log(`Found key: "${key}", value: "${value}"`);
+            
+            // Map keys based on lowercase name
+            switch (key) {
+              case 'day':
+                day = value;
+                console.log('Set day to', day);
+                break;
+              case 'time':
+                time = value;
+                console.log('Set time to', time);
+                break;
+              case 'contact':
+                mappedData.phone = value;
+                console.log('Set phone to', value);
+                break;
+              case 'email':
+                mappedData.email = value;
+                console.log('Set email to', value);
+                break;
+              case 'address':
+                mappedData.address = value;
+                console.log('Set address to', value);
+                break;
+            }
+          }
+          
+          // Combine day and time if both are available
+          if (day && time) {
+            mappedData.timings = `${day}: ${time}`;
+          } else if (day) {
+            mappedData.timings = day;
+          } else if (time) {
+            mappedData.timings = time;
+          }
+          
+          console.log('Final mapped data:', mappedData);
+          this.customerCare = mappedData;
+        } 
+        // Handle object format directly
+        else if (typeof customerCareData === 'object') {
         this.customerCare = {
           timings: customerCareData.timings || '',
-          whatsapp: customerCareData.whatsapp || '',
+            phone: customerCareData.phone || customerCareData.contact || '',
           email: customerCareData.email || '',
-          phone: customerCareData.phone || '',
-          address: customerCareData.address || '',
-          viber: customerCareData.viber || ''
+            address: customerCareData.address || ''
         };
+        }
         
-        console.log('Customer care data updated:', this.customerCare);
+        console.log('Final customer care data:', this.customerCare);
       } catch (error) {
         console.error('Error fetching customer care:', error);
+        // Set default values
+        this.customerCare = {
+          timings: 'Monday - Friday: 9:00 AM - 6:00 PM, Saturday: 10:00 AM - 4:00 PM, Sunday: Closed',
+          phone: '+977-1-4444444',
+          email: 'care@yourstore.com',
+          address: 'santingar, Baneshwor, Kathmandu, Nepal'
+        };
       } finally {
         this.customerCareLoading = false;
     }

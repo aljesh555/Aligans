@@ -17,7 +17,7 @@ class CategoryResource extends Resource
 {
     protected static ?string $model = Category::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-tag';
 
     protected static ?string $navigationGroup = 'Shop Management';
 
@@ -39,10 +39,6 @@ class CategoryResource extends Resource
                     ->default(null),
                 Forms\Components\FileUpload::make('image_url')
                     ->image(),
-                Forms\Components\FileUpload::make('thumbnail_image')
-                    ->image(),
-                Forms\Components\FileUpload::make('banner_image')
-                    ->image(),
                 Forms\Components\Textarea::make('description')
                     ->columnSpanFull(),
                 Forms\Components\Select::make('status')
@@ -59,17 +55,30 @@ class CategoryResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('category_type')
+                    ->label('Type')
+                    ->badge()
+                    ->formatStateUsing(fn ($record) => $record->parent_id === null ? 'Top Category' : 'Subcategory')
+                    ->color(fn ($record) => $record->parent_id === null ? 'primary' : 'secondary'),
+                Tables\Columns\TextColumn::make('name')
+                    ->searchable()
+                    ->formatStateUsing(function ($record) {
+                        if ($record->parent_id === null) {
+                            return '<strong>' . $record->name . '</strong>';
+                        }
+                        return '└─ ' . $record->name;
+                    })
+                    ->html(),
                 Tables\Columns\TextColumn::make('parent.name')
                     ->label('Parent Category')
                     ->sortable()
+                    ->placeholder('N/A')
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
                 Tables\Columns\TextColumn::make('slug')
-                    ->searchable(),
-                Tables\Columns\ImageColumn::make('image_url'),
-                Tables\Columns\ImageColumn::make('thumbnail_image'),
-                Tables\Columns\ImageColumn::make('banner_image'),
+                    ->searchable()
+                    ->toggleable(),
+                Tables\Columns\ImageColumn::make('image_url')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -86,8 +95,33 @@ class CategoryResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->modifyQueryUsing(function (Builder $query) {
+                // First prioritize parent_id (null values first), then sort by name
+                return $query->orderBy('parent_id', 'asc')
+                            ->orderBy('name', 'asc');
+            })
+            ->groups([
+                Tables\Grouping\Group::make('parent.name')
+                    ->label('Group by Parent Category')
+                    ->titlePrefixedWithLabel(false)
+                    ->getTitleFromRecordUsing(fn ($record) => $record->parent ? $record->parent->name : 'Top Categories')
+                    ->collapsible(),
+            ])
+            ->defaultGroup('parent.name')
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('category_type')
+                    ->label('Category Type')
+                    ->options([
+                        'top' => 'Top Categories',
+                        'sub' => 'Subcategories',
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        if ($data['value'] === 'top') {
+                            $query->whereNull('parent_id');
+                        } elseif ($data['value'] === 'sub') {
+                            $query->whereNotNull('parent_id');
+                        }
+                    })
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

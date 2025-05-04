@@ -14,7 +14,14 @@
       <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         <div v-for="category in categories" :key="category.id" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
           <div class="h-40 bg-indigo-100 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <img 
+              v-if="category.image_url" 
+              :src="getImageUrl(category.image_url)" 
+              :alt="category.name"
+              class="w-full h-full object-cover"
+              @error="handleImageError($event, category)"
+            />
+            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
           </div>
@@ -51,11 +58,42 @@ export default {
         }
         const data = await response.json()
         this.categories = data.data || []
+        console.log('Categories loaded:', this.categories)
       } catch (err) {
         this.error = err.message
       } finally {
         this.loading = false
       }
+    },
+    
+    // Function to handle image URL formatting
+    getImageUrl(imagePath) {
+      if (!imagePath) return '';
+      
+      // If the path is a full URL, return it directly
+      if (imagePath.startsWith('http')) {
+        return imagePath;
+      }
+      
+      // Handle paths that might already have "storage/" in them
+      if (imagePath.startsWith('storage/')) {
+        return `http://localhost:8000/${imagePath}`;
+      }
+      
+      // Otherwise, assume it's a relative path on the server
+      return `http://localhost:8000/storage/${imagePath}`;
+    },
+    
+    // Function to handle image loading errors
+    handleImageError(event, category) {
+      console.error(`Error loading image for category ${category.name}:`, event);
+      // Replace with fallback
+      event.target.style.display = 'none';
+      event.target.parentElement.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+      `;
     }
   }
 }

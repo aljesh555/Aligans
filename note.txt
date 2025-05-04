@@ -5,7 +5,7 @@ ENVIRONMENT NOTES
 
 SERVER COMMANDS:
 
-To Run API Server :cd api-server; php artisan serve
+To Run API Server : cd api-server; php artisan serve
 
 To Run SPA Client: cd spa-client ; npm run serve
 

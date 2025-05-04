@@ -250,55 +250,47 @@ export default {
       this.error = null;
       
       try {
-        // Add a timestamp parameter to prevent caching
-        const timestamp = new Date().getTime();
-        const response = await axios.get(`http://127.0.0.1:8000/api/about?t=${timestamp}`);
+        // Fetch about-us data from static_pages table using StaticPageController endpoint
+        const response = await axios.get('http://127.0.0.1:8000/api/static-pages/about-us');
         
-        if (response.data) {
-          this.aboutData = response.data;
+        if (response.data.success) {
+          const pageData = response.data.data;
           
-          // If content contains HTML, it's already set with v-html directive
-          // If team is string (JSON), parse it
-          if (typeof this.aboutData.team === 'string') {
-            try {
-              this.aboutData.team = JSON.parse(this.aboutData.team);
-            } catch (e) {
-              console.error('Failed to parse team data:', e);
-              this.aboutData.team = [];
-            }
-          }
+          this.aboutData = {
+            title: pageData.title || 'About Us',
+            banner_image: pageData.banner || null,
+            content: pageData.content || '',
+            mission: '', // These fields are not in static_pages table
+            vision: '',  // but keeping them in case you want to add them later
+            values: '',
+            team: []
+          };
+        } else {
+          this.error = response.data.message || 'Failed to load about us content';
         }
-      } catch (error) {
-        console.error('Error fetching about us data:', error);
-        this.error = 'Failed to load about us content. Please try again later.';
+      } catch (err) {
+        console.error('Error fetching about us data:', err);
+        this.error = 'There was a problem loading the about us content. Please try again later.';
       } finally {
         this.loading = false;
       }
     },
     
-    getImageUrl(imagePath) {
-      if (!imagePath) return '';
+    getImageUrl(path) {
+      if (!path) return null;
       
-      // Add timestamp for cache busting
-      const timestamp = new Date().getTime();
-      
-      // Check if it's already a full URL
-      if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-        return `${imagePath}?t=${timestamp}`;
+      // Check if the path is already a full URL
+      if (path.startsWith('http://') || path.startsWith('https://')) {
+        return path;
       }
       
-      // Check if it's a storage URL
-      if (imagePath.includes('storage/')) {
-        return `http://127.0.0.1:8000/${imagePath.startsWith('/') ? imagePath.substring(1) : imagePath}?t=${timestamp}`;
-      }
-      
-      // Default: assume it's a storage path
-      return `http://127.0.0.1:8000/storage/${imagePath.startsWith('/') ? imagePath.substring(1) : imagePath}?t=${timestamp}`;
+      // Otherwise, prepend the API base URL
+      return `http://127.0.0.1:8000/${path.replace(/^\//, '')}`;
     },
     
     handleImageError(event) {
-      // Replace with a placeholder image if the image fails to load
-      event.target.src = 'https://via.placeholder.com/1200x400?text=About+Us';
+      // Replace broken image with a placeholder
+      event.target.src = 'https://via.placeholder.com/800x400?text=About+Us';
     }
   }
 };

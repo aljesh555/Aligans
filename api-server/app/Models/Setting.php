@@ -22,6 +22,48 @@ class Setting extends Model
         'description'
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'value' => 'json',
+    ];
+
+    /**
+     * Set the value attribute.
+     *
+     * @param  mixed  $value
+     * @return void
+     */
+    public function setValueAttribute($value)
+    {
+        // For image type, ensure the value is a JSON string
+        if ($this->attributes['type'] === 'image' && is_string($value) && !$this->isJson($value)) {
+            $this->attributes['value'] = json_encode($value);
+        } 
+        // For string type, ensure the value is a JSON string
+        else if ($this->attributes['type'] === 'string' && is_string($value) && !$this->isJson($value)) {
+            $this->attributes['value'] = json_encode($value);
+        }
+        // For repeater type or already JSON formatted, store as is
+        else {
+            $this->attributes['value'] = $value;
+        }
+    }
+
+    /**
+     * Check if a string is a valid JSON
+     *
+     * @param  string  $string
+     * @return bool
+     */
+    private function isJson($string) {
+        json_decode($string);
+        return (json_last_error() == JSON_ERROR_NONE);
+    }
+
     // /**
     //  * Get a setting value by key
     //  *

@@ -17,8 +17,13 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use App\Filament\Resources\SettingResource\Pages\SocialMediaSettings;
 use Filament\Navigation\NavigationItem;
+use App\Filament\Pages\Dashboard as CustomDashboard;
+use App\Filament\Widgets\StatsOverviewWidget;
+use App\Filament\Widgets\OrdersChartWidget;
+use App\Filament\Widgets\TopSellingProductsWidget;
+use App\Filament\Widgets\LatestOrdersWidget;
+use App\Filament\Widgets\LowStockProductsWidget;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -35,19 +40,22 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                CustomDashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                StatsOverviewWidget::class,
+                OrdersChartWidget::class,
+                TopSellingProductsWidget::class,
+                LatestOrdersWidget::class,
+                LowStockProductsWidget::class,
             ])
             ->navigationItems([
-                NavigationItem::make('Social Media')
-                    ->url(fn(): string => SocialMediaSettings::getUrl())
-                    ->icon('heroicon-o-share')
-                    ->group('Settings')
-                    ->sort(3),
+                // NavigationItem::make('Social Media')
+                //     ->url(fn(): string => SocialMediaSettings::getUrl())
+                //     ->icon('heroicon-o-share')
+                //     ->group('Settings')
+                //     ->sort(3),
             ])
             ->middleware([
                 EncryptCookies::class,

@@ -103,7 +103,7 @@
           </div>
           
           <!-- Product Info -->
-          <div class="p-4">
+          <div class="p-4 flex flex-col min-h-[200px]">
             <h3 
               class="text-lg font-semibold text-gray-900 mb-2 cursor-pointer hover:text-blue-600" 
               @click="navigateToProductDetails(product)"
@@ -126,17 +126,17 @@
             <!-- Price -->
             <div class="mb-3">
               <template v-if="product.on_sale && product.discount_price">
-                <span class="text-gray-400 line-through">${{ formatPrice(product.price) }}</span>
-                <span class="text-xl font-bold text-blue-600 ml-2">${{ formatPrice(product.discount_price) }}</span>
+                <span class="text-gray-400 line-through">Rs {{ formatPrice(product.price) }}</span>
+                <span class="text-xl font-bold text-blue-600 ml-2">Rs {{ formatPrice(product.discount_price) }}</span>
               </template>
-              <span v-else class="text-xl font-bold text-gray-900">${{ formatPrice(product.price) }}</span>
+              <span v-else class="text-xl font-bold text-gray-900">Rs {{ formatPrice(product.price) }}</span>
             </div>
             
             <!-- Description -->
-            <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ product.description }}</p>
+            <div class="text-gray-600 text-sm mb-4 line-clamp-2 flex-grow" v-html="cleanDescription(product.description)"></div>
             
             <!-- Actions -->
-            <div class="flex justify-between items-center">
+            <div class="flex justify-between items-center mt-auto">
               <router-link 
                 :to="`/products/${product.id}`" 
                 class="text-blue-500 hover:text-blue-700 font-medium"
@@ -438,6 +438,15 @@ export default {
       } else {
         console.error('Product has no ID or slug for navigation', product);
       }
+    },
+    cleanDescription(description) {
+      if (!description) return '';
+      
+      // Strip HTML tags but preserve spacing
+      const textOnly = description.replace(/<[^>]*>/g, '');
+      
+      // Remove extra spaces and &nbsp; entities
+      return textOnly.replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
     }
   }
 };

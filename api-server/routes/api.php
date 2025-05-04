@@ -35,6 +35,8 @@ use App\Http\Controllers\Api\PrivacyPolicyController;
 use App\Http\Controllers\Api\ShippingPolicyController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\API\WishlistController;
+use App\Http\Controllers\Api\StaticPageController;
+use App\Http\Controllers\Api\BrandController;
 
 /*
 |--------------------------------------------------------------------------
@@ -99,6 +101,9 @@ Route::get('/debug/orders', function () {
 Route::get('/logo/active', [LogoController::class, 'getActive']);
 Route::post('/logos/convert-to-base64', [LogoController::class, 'convertToBase64']);
 
+// New route to fetch logo from settings table
+Route::get('/settings/logo', [SettingsController::class, 'getLogo']);
+
 // Banner routes
 Route::get('/banners', [BannerController::class, 'index']);
 Route::get('/banners/{id}', [BannerController::class, 'show']);
@@ -140,6 +145,9 @@ Route::get('/settings/social-media', [SettingsController::class, 'getSocialMedia
 Route::get('/settings/social-links', [SettingsController::class, 'getSocialLinks']);
 Route::post('/settings/social-links', [SettingsController::class, 'updateSocialLinks']);
 
+// Public route to get customer care information
+Route::get('/settings/customer-care', [SettingsController::class, 'getCustomerCare']);
+
 // Terms & Conditions routes
 Route::get('/settings/terms-conditions', [SettingsController::class, 'getTermsConditions']);
 Route::get('/terms', [TermsController::class, 'getTerms']);
@@ -175,6 +183,8 @@ Route::get('/faqs/category/{category}', [FaqController::class, 'getByCategory'])
 // Product-related routes
 Route::get('/products/{product}/reviews', [ReviewController::class, 'index']);
 Route::get('/reviews/{id}', [ReviewController::class, 'show']);
+// Add new route to fetch product images
+Route::get('/products/{id}/images', [\App\Http\Controllers\API\ProductDetailsController::class, 'getProductImages']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -205,8 +215,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('orders', OrderController::class);
     Route::put('/orders/{order}/update-status', [OrderController::class, 'updateStatus']);
     Route::post('/orders/{orderId}/send-confirmation', [OrderController::class, 'sendConfirmation']);
-    Route::get('/orders/{orderId}/invoice', [InvoiceController::class, 'download']);
-    Route::get('/orders/{orderId}/invoice/view', [InvoiceController::class, 'view']);
+    Route::get('/orders/{orderId}/invoice', [InvoiceController::class, 'download'])->name('api.orders.invoice');
+    Route::get('/orders/{orderId}/invoice/view', [InvoiceController::class, 'view'])->name('api.orders.invoice.view');
     
     // Event routes (create, update, delete - protected)
     Route::apiResource('events', EventController::class)->except(['index', 'show']);
@@ -287,7 +297,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/settings/social-media', [SettingsController::class, 'storeSocialMediaSettings']);
 
     // Customer Care Settings routes (admin only)
-    Route::get('/settings/customer-care', [SettingsController::class, 'getCustomerCare']);
     Route::post('/settings/customer-care', [SettingsController::class, 'updateCustomerCare']);
 
     // Header Announcement Settings route (admin only)
@@ -315,3 +324,29 @@ Route::get('products/{id}/details', [ProductDetailsController::class, 'getProduc
 Route::get('products/{id}/specifications', [ProductDetailsController::class, 'getProductSpecifications']);
 Route::get('products/{id}/reviews', [ProductDetailsController::class, 'getProductReviews']);
 Route::post('products/{id}/reviews', [ProductDetailsController::class, 'submitReview']);
+Route::get('products/{id}/related', [ProductDetailsController::class, 'getRelatedProducts']);
+
+// Add the following routes along with the other public settings routes
+
+// Footer about text route
+Route::get('/settings/footer-about-text', [SettingsController::class, 'getFooterAboutText']);
+
+// Get setting by key route
+Route::get('/settings/by-key/{key}', [SettingsController::class, 'getByKey']);
+
+// Add a direct route for footer about text
+Route::get('/footer-about-text', function() {
+    return response()->json([
+        'success' => true,
+        'data' => 'This is Aljesh Raut'
+    ]);
+});
+
+// Static Pages routes
+Route::get('/static-pages', [StaticPageController::class, 'index']);
+Route::get('/static-pages/{slug}', [StaticPageController::class, 'show']);
+
+// Brand routes
+Route::get('/brands', [BrandController::class, 'index']);
+Route::get('/brands/featured', [BrandController::class, 'featured']);
+Route::get('/brands/{slug}', [BrandController::class, 'show']);

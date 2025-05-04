@@ -14,8 +14,6 @@ class Category extends Model
         'parent_id', 
         'image_url', 
         'slug',
-        'thumbnail_image',
-        'banner_image',
         'description',
         'status'
     ];

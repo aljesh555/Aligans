@@ -79,42 +79,6 @@
           </div>
         </div>
 
-        <!-- Thumbnail Image URL Field -->
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            Thumbnail Image URL
-          </label>
-          <input
-            v-model="form.thumbnail_image"
-            type="text"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            :class="{ 'border-red-500': errors.thumbnail_image }"
-            placeholder="https://example.com/thumbnail.jpg"
-          />
-          <p v-if="errors.thumbnail_image" class="mt-1 text-sm text-red-600">{{ errors.thumbnail_image[0] }}</p>
-          <div v-if="form.thumbnail_image" class="mt-2">
-            <img :src="form.thumbnail_image" alt="Thumbnail preview" class="h-20 w-auto object-cover rounded border">
-          </div>
-        </div>
-
-        <!-- Banner Image URL Field -->
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            Banner Image URL
-          </label>
-          <input
-            v-model="form.banner_image"
-            type="text"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            :class="{ 'border-red-500': errors.banner_image }"
-            placeholder="https://example.com/banner.jpg"
-          />
-          <p v-if="errors.banner_image" class="mt-1 text-sm text-red-600">{{ errors.banner_image[0] }}</p>
-          <div v-if="form.banner_image" class="mt-2">
-            <img :src="form.banner_image" alt="Banner preview" class="w-full h-32 object-cover rounded border">
-          </div>
-        </div>
-
         <!-- Parent Category Field -->
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -195,8 +159,6 @@ export default {
       description: '',
       parent_id: null,
       image_url: '',
-      thumbnail_image: '',
-      banner_image: '',
       status: 'active'
     });
     

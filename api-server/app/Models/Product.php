@@ -50,6 +50,14 @@ class Product extends Model
     }
 
     /**
+     * Get the brand that owns the product.
+     */
+    public function brand()
+    {
+        return $this->belongsTo(Brand::class);
+    }
+
+    /**
      * Get the product stocks for this product.
      */
     public function productStocks()
@@ -87,5 +95,13 @@ class Product extends Model
     public function wishlists()
     {
         return $this->hasMany(Wishlist::class);
+    }
+
+    /**
+     * Get the additional images for this product.
+     */
+    public function productImages()
+    {
+        return $this->hasMany(ProductImage::class)->orderBy('sort_order');
     }
 }

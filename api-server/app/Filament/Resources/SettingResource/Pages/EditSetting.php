@@ -13,19 +13,59 @@ class EditSetting extends EditRecord
     protected function mutateFormDataBeforeFill(array $data): array
     {
         if($data['type'] === 'repeater') {
-            $data['repeaterValue'] = json_decode($data['value'], true);
+            if (is_string($data['value'])) {
+                $decoded = json_decode($data['value'], true);
+                $data['repeaterValue'] = $decoded ?: [];
+            } else {
+                $data['repeaterValue'] = $data['value'] ?: [];
+            }
             unset($data['value']);
         }
         if($data['type'] === 'image') {
+            if (is_string($data['value'])) {
+                try {
+                    $decoded = json_decode($data['value'], true);
+                    if (is_string($decoded)) {
+                        $data['fileValue'] = $decoded;
+                    } 
+                    else if (is_array($decoded) && count($decoded) === 1) {
+                        $data['fileValue'] = reset($decoded);
+                    }
+                    else {
+                        $data['fileValue'] = $decoded;
+                    }
+                } catch (\Exception $e) {
+                    $data['fileValue'] = $data['value'];
+                }
+            } else {
             $data['fileValue'] = $data['value'];
+            }
             unset($data['value']);
         }
         if($data['type'] === 'file') {
+            if (is_string($data['value'])) {
+                try {
+                    $decoded = json_decode($data['value'], true);
+                    $data['fileValue'] = $decoded ?: $data['value'];
+                } catch (\Exception $e) {
+                    $data['fileValue'] = $data['value'];
+                }
+            } else {
             $data['fileValue'] = $data['value'];
+            }
             unset($data['value']);
         }
         if($data['type'] === 'string') {
+            if (is_string($data['value'])) {
+                try {
+                    $decoded = json_decode($data['value'], true);
+                    $data['stringValue'] = $decoded ?: $data['value'];
+                } catch (\Exception $e) {
+                    $data['stringValue'] = $data['value'];
+                }
+            } else {
             $data['stringValue'] = $data['value'];
+            }
             unset($data['value']);
         }
         return $data;
@@ -33,19 +73,19 @@ class EditSetting extends EditRecord
     protected function mutateFormDataBeforeSave(array $data): array
     {
         if($data['type'] === 'repeater') {
-            $data['value'] = $data['repeaterValue'];
+            $data['value'] = json_encode($data['repeaterValue']);
             unset($data['repeaterValue']);
         }
         if($data['type'] === 'image') {
-            $data['value'] = $data['fileValue'];
+            $data['value'] = json_encode($data['fileValue']);
             unset($data['fileValue']);
         }
         if($data['type'] === 'file') {
-            $data['value'] = $data['fileValue'];
+            $data['value'] = json_encode($data['fileValue']);
             unset($data['fileValue']);
         }
         if($data['type'] === 'string') {
-            $data['value'] = $data['stringValue'];
+            $data['value'] = json_encode($data['stringValue']);
             unset($data['stringValue']);
         }
         return $data;

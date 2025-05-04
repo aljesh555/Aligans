@@ -62,12 +62,10 @@
           <select 
             v-model="selectedCategory" 
             @change="filterProducts"
-            class="p-2 border rounded-md w-full md:w-auto"
+            class="border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[200px]"
           >
             <option :value="null">All Categories</option>
-            <option v-for="category in categories" :key="category.id" :value="category.id">
-              {{ category.name }}
-            </option>
+            <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
           </select>
         </div>
         
@@ -88,6 +86,37 @@
               Search
             </button>
           </div>
+        </div>
+      </div>
+      
+      <!-- Brand Filter -->
+      <div class="mb-8 flex flex-col md:flex-row justify-between">
+        <div class="mb-4 md:mb-0">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+          <select 
+            v-model="selectedBrand" 
+            @change="filterProducts"
+            class="border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[200px]"
+          >
+            <option :value="null">All Brands</option>
+            <option v-for="brand in brands" :key="brand.id" :value="brand.id">{{ brand.name }}</option>
+          </select>
+        </div>
+        
+        <!-- Sort Filter -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Sort</label>
+          <select 
+            v-model="sortOption" 
+            @change="filterProducts"
+            class="border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[200px]"
+          >
+            <option value="newest">Newest First</option>
+            <option value="price_low">Price: Low to High</option>
+            <option value="price_high">Price: High to Low</option>
+            <option value="name_asc">Name: A to Z</option>
+            <option value="name_desc">Name: Z to A</option>
+          </select>
         </div>
       </div>
       
@@ -141,19 +170,19 @@
           </template>
           
           <!-- Product Info -->
-          <div class="p-4" :class="{ 'bg-gradient-to-r from-blue-50 to-white': product.category_id === 1 }">
+          <div class="p-4 flex flex-col min-h-[200px]" :class="{ 'bg-gradient-to-r from-blue-50 to-white': product.category_id === 1 }">
             <div v-if="product.category_id === 1" class="text-xs text-blue-600 font-semibold mb-1">OFFICIAL JERSEY</div>
             <div class="flex justify-between items-start mb-2">
               <h2 class="text-xl font-bold">{{ product.name }}</h2>
               <span :class="[
                 'font-bold', 
                 product.category_id === 1 ? 'text-lg text-blue-700 bg-blue-50 px-2 py-1 rounded' : 'text-lg text-blue-600'
-              ]">${{ parseFloat(product.price).toFixed(2) }}</span>
+              ]">Rs {{ parseFloat(product.price).toFixed(2) }}</span>
             </div>
             
-            <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ product.description }}</p>
+            <div class="text-gray-600 text-sm mb-4 line-clamp-2 flex-grow" v-html="cleanDescription(product.description)"></div>
             
-            <div class="flex justify-between items-center">
+            <div class="flex justify-between items-center mt-auto">
               <router-link 
                 :to="`/products/${product.id}`" 
                 class="text-blue-500 hover:text-blue-700 font-medium"
@@ -233,10 +262,17 @@ export default {
     return {
       loading: true,
       products: [],
-      categories: [],
+      filteredProducts: [],
+      error: null,
+      sortOption: 'newest',
       selectedCategory: null,
-      searchQuery: '',
+      selectedBrand: null,
+      brands: [],
+      categories: [],
+      priceRange: [0, 50000],
       pagination: null,
+      apiBaseUrl: 'http://127.0.0.1:8000',
+      currentPage: 1,
       currentCategoryName: null,
       // Header state
       mobileMenuOpen: false,
@@ -244,57 +280,7 @@ export default {
       cartDropdownOpen: false,
       categoriesDropdownOpen: false,
       mobileCategoriesOpen: false,
-      // Mock products
-      mockProducts: [
-        {
-          id: 1,
-          name: "Professional Basketball",
-          description: "Official size and weight basketball for professional games",
-          price: 49.99,
-          image_url: null,
-          category_id: 1
-        },
-        {
-          id: 2,
-          name: "Training Soccer Ball",
-          description: "Durable soccer ball perfect for daily training",
-          price: 35.95,
-          image_url: null,
-          category_id: 2
-        },
-        {
-          id: 3,
-          name: "Premium Tennis Racket",
-          description: "Lightweight tennis racket with perfect balance and control",
-          price: 129.99,
-          image_url: null,
-          category_id: 3
-        },
-        {
-          id: 4,
-          name: "Running Shoes",
-          description: "Comfortable running shoes with excellent cushioning",
-          price: 89.95,
-          image_url: null,
-          category_id: 4
-        },
-        {
-          id: 5,
-          name: "Swimming Goggles",
-          description: "Anti-fog swimming goggles with UV protection",
-          price: 24.99,
-          image_url: null,
-          category_id: 5
-        },
-        {
-          id: 6,
-          name: "Fitness Mat",
-          description: "Extra thick yoga and fitness mat with non-slip surface",
-          price: 39.95,
-          image_url: null,
-          category_id: 6
-        }
-      ]
+      searchQuery: '',
     }
   },
   setup() {
@@ -367,19 +353,26 @@ export default {
       this.accountDropdownOpen = false;
     },
     
-    async fetchProducts(page = 1) {
+    async fetchProducts() {
+      this.loading = true;
+      this.error = null;
+      
       try {
-        this.loading = true;
+        // Fetch categories first
+        await this.fetchCategories();
+        
+        // Fetch brands
+        await this.fetchBrands();
         
         let result;
         
         // Use direct ProductService with search and category filtering
         if (this.searchQuery) {
           console.log(`Searching for products with query: "${this.searchQuery}" and category: ${this.selectedCategory}`);
-          result = await productService.getProducts(this.selectedCategory, this.searchQuery, page);
+          result = await productService.getProducts(this.selectedCategory, this.searchQuery, this.currentPage);
         } else {
           console.log(`Fetching products for category: ${this.selectedCategory || 'all'}`);
-          result = await productService.getProducts(this.selectedCategory, null, page);
+          result = await productService.getProducts(this.selectedCategory, null, this.currentPage);
         }
         
         console.log('API response:', result);
@@ -453,9 +446,23 @@ export default {
     
     async fetchCategories() {
       try {
-        this.categories = await productService.getCategories();
-      } catch (error) {
-        console.error('Error fetching categories:', error);
+        const response = await axios.get(`${this.apiBaseUrl}/api/categories`);
+        if (response.data && response.data.data) {
+          this.categories = response.data.data;
+        }
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+      }
+    },
+    
+    async fetchBrands() {
+      try {
+        const response = await axios.get(`${this.apiBaseUrl}/api/brands`);
+        if (response.data && response.data.data) {
+          this.brands = response.data.data;
+        }
+      } catch (err) {
+        console.error('Error fetching brands:', err);
       }
     },
     
@@ -474,12 +481,29 @@ export default {
     },
     
     filterProducts() {
-      this.fetchProducts(1); // Reset to first page when filtering
+      let url = `${this.apiBaseUrl}/api/products?page=${this.currentPage}`;
+      
+      if (this.selectedCategory) {
+        url += `&category_id=${this.selectedCategory}`;
+      }
+      
+      if (this.selectedBrand) {
+        url += `&brand_id=${this.selectedBrand}`;
+      }
+      
+      if (this.priceRange[0] > 0 || this.priceRange[1] < 50000) {
+        url += `&min_price=${this.priceRange[0]}&max_price=${this.priceRange[1]}`;
+      }
+      
+      url += `&sort=${this.sortOption}`;
+      
+      this.fetchFilteredProducts(url);
     },
     
     goToPage(page) {
       if (page < 1 || page > this.pagination.last_page) return;
-      this.fetchProducts(page);
+      this.currentPage = page;
+      this.fetchProducts();
       // Scroll to top when changing pages
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
@@ -502,7 +526,8 @@ export default {
     resetFilters() {
       this.selectedCategory = null;
       this.searchQuery = '';
-      this.fetchProducts(1);
+      this.currentPage = 1;
+      this.fetchProducts();
     },
     
     performSearch() {
@@ -523,6 +548,16 @@ export default {
           console.error('Navigation error:', err);
         }
       });
+    },
+    
+    cleanDescription(description) {
+      if (!description) return '';
+      
+      // Strip HTML tags but preserve spacing
+      const textOnly = description.replace(/<[^>]*>/g, '');
+      
+      // Remove extra spaces and &nbsp; entities
+      return textOnly.replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
     }
   },
   computed: {

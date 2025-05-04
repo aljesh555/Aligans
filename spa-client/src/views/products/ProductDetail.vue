@@ -30,13 +30,50 @@
       <!-- Product Details -->
       <div v-else class="mb-16">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          <!-- Product Image -->
-          <div class="bg-gray-100 rounded-lg overflow-hidden h-96 flex items-center justify-center">
+          <!-- Product Image Gallery -->
+          <div>
+            <!-- Main Product Image -->
+            <div class="bg-gray-100 rounded-lg overflow-hidden h-96 flex items-center justify-center mb-4">
+              <img 
+                :src="getImageUrl(currentImage || product.image_url)" 
+                :alt="product.name" 
+                class="object-contain h-full w-full transition-opacity duration-300"
+              >
+            </div>
+            
+            <!-- Thumbnail Gallery -->
+            <div class="flex space-x-2 overflow-x-auto pb-2">
+              <!-- Main image thumbnail -->
+              <div 
+                class="w-20 h-20 flex-shrink-0 border-2 rounded-md overflow-hidden cursor-pointer transition-all duration-200"
+                :class="{'border-blue-500': currentImage === product.image_url || !currentImage, 'border-gray-200 hover:border-gray-300': currentImage && currentImage !== product.image_url}"
+                @mouseover="currentImage = product.image_url"
+                @click="currentImage = product.image_url"
+              >
             <img 
               :src="getImageUrl(product.image_url)" 
               :alt="product.name" 
-              class="object-contain h-full w-full"
+                  class="w-full h-full object-cover"
+                >
+              </div>
+              
+              <!-- Additional image thumbnails -->
+              <div 
+                v-for="(image, index) in productAdditionalImages" 
+                :key="index"
+                class="w-20 h-20 flex-shrink-0 border-2 rounded-md overflow-hidden cursor-pointer transition-all duration-200"
+                :class="{'border-blue-500': currentImage === image, 'border-gray-200 hover:border-gray-300': currentImage !== image}"
+                @mouseover="currentImage = image"
+                @click="currentImage = image"
+              >
+                <img 
+                  :src="getImageUrl(image)" 
+                  :alt="`${product.name} - View ${index + 1}`" 
+                  class="w-full h-full object-cover"
+                  @error="handleImageError($event, index)"
             >
+              </div>
+            </div>
           </div>
           
           <!-- Product Info -->
@@ -63,12 +100,12 @@
             <div class="mb-6">
               <!-- Display both original and sale price if product is on sale -->
               <div v-if="product.on_sale && product.sale_price" class="flex flex-col">
-                <span class="text-lg text-gray-500 line-through">${{ parseFloat(product.price).toFixed(2) }}</span>
-                <span class="text-2xl font-bold text-red-600">${{ parseFloat(product.sale_price).toFixed(2) }}</span>
+                <span class="text-lg text-gray-500 line-through">Rs. {{ parseFloat(product.price).toFixed(2) }}</span>
+                <span class="text-2xl font-bold text-red-600">Rs. {{ parseFloat(product.sale_price).toFixed(2) }}</span>
               </div>
               <!-- Display only regular price if not on sale -->
               <div v-else class="text-2xl font-bold text-gray-900">
-                ${{ parseFloat(product.price).toFixed(2) }}
+                Rs. {{ parseFloat(product.price).toFixed(2) }}
               </div>
             </div>
             
@@ -121,8 +158,10 @@
                   -
                 </button>
                 <input 
-                  type="text" 
+                  type="number" 
                   v-model="quantity" 
+                  min="1"
+                  max="product.stock"
                   class="w-full px-3 py-1 border-t border-b border-gray-300 text-center"
                   :class="{ 'bg-gray-100': product.stock <= 0 }"
                   :disabled="product.stock <= 0"
@@ -139,6 +178,9 @@
               </div>
               <div v-if="product.stock > 0 && product.stock <= 5" class="mt-1 text-sm text-orange-600">
                 Only {{ product.stock }} items left in stock!
+              </div>
+              <div v-else-if="product.stock <= 0" class="mt-1 text-sm text-red-600">
+                This product is currently out of stock
               </div>
             </div>
             
@@ -456,26 +498,133 @@
         <div class="mt-16 border-t border-gray-200 pt-12">
           <h2 class="text-2xl font-bold mb-8">You might also like</h2>
           
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div v-for="i in 4" :key="i" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
-              <div class="h-48 bg-gray-200 relative">
-                <img 
-                  src="https://images.unsplash.com/photo-1608231387042-66d1773070a5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjZ8fHNwb3J0cyUyMGVxdWlwbWVudHxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60" 
-                  alt="Related product"
-                  class="w-full h-full object-cover"
+          <!-- Loading state -->
+          <div v-if="loadingRelatedProducts" class="flex justify-center py-8">
+            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+          </div>
+          
+          <!-- Error state -->
+          <div v-else-if="relatedProductsError" class="text-center py-8 text-gray-500">
+            {{ relatedProductsError }}
+          </div>
+          
+          <!-- No related products found -->
+          <div v-else-if="relatedProducts.length === 0" class="text-center py-8 text-gray-500">
+            No related products found
+          </div>
+          
+          <!-- Related products carousel -->
+          <div v-else class="relative">
+            <!-- Previous button -->
+            <button 
+              @click="slideRelatedProducts('prev')" 
+              class="absolute left-0 top-1/2 -translate-y-1/2 -ml-4 z-10 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 focus:outline-none border border-gray-200"
+              :class="{'opacity-50 cursor-not-allowed': relatedSlideIndex === 0}"
+              :disabled="relatedSlideIndex === 0"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            
+            <!-- Products container with overflow -->
+            <div 
+              class="overflow-hidden" 
+              @touchstart="handleTouchStart" 
+              @touchmove="handleTouchMove" 
+              @touchend="handleTouchEnd"
+            >
+              <div 
+                class="flex transition-transform duration-300 ease-in-out"
+                :style="{ transform: `translateX(-${relatedSlideIndex * getSlidePercentage()}%)` }"
+              >
+                <div 
+                  v-for="relatedProduct in relatedProducts" 
+                  :key="relatedProduct.id" 
+                  class="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/5 flex-shrink-0 px-3"
                 >
-              </div>
-              
-              <div class="p-4">
-                <h3 class="text-lg font-medium mb-2">Related Product {{ i }}</h3>
-                <p class="text-gray-600 mb-4 text-sm line-clamp-2">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-                <div class="flex justify-between items-center">
-                  <span class="text-blue-700 font-bold">$79.99</span>
-                  <router-link to="/products/1" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition">
-                    View Details
-                  </router-link>
+                  <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition h-full flex flex-col">
+                    <div class="h-48 bg-gray-200 relative">
+                      <img 
+                        :src="getImageUrl(relatedProduct.image_url || relatedProduct.image)" 
+                        :alt="relatedProduct.name"
+                        class="w-full h-full object-cover"
+                        @error="handleImageError"
+                      >
+                      <!-- Sale badge if product is on sale -->
+                      <div v-if="relatedProduct.on_sale" class="absolute top-2 left-2 bg-red-600 text-white text-xs px-2 py-1 rounded-md">
+                        Sale
+                      </div>
+                      <!-- New badge if product is new arrival -->
+                      <div v-if="relatedProduct.is_new_arrival" class="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded-md">
+                        New
+                      </div>
+                    </div>
+                    
+                    <div class="p-4 flex-grow flex flex-col">
+                      <h3 class="text-lg font-medium mb-2">{{ relatedProduct.name }}</h3>
+                      <p v-if="relatedProduct.short_description" class="text-gray-600 mb-4 text-sm line-clamp-2 flex-grow" v-html="relatedProduct.short_description"></p>
+                      <p v-else class="text-gray-600 mb-4 text-sm line-clamp-2 flex-grow">{{ getShortDescription(relatedProduct.description) }}</p>
+                      
+                      <div class="flex justify-between items-center mt-auto">
+                        <!-- Sale price display -->
+                        <div class="flex flex-col">
+                          <span v-if="relatedProduct.on_sale && relatedProduct.sale_price" class="text-gray-500 line-through text-sm">
+                            Rs{{ parseFloat(relatedProduct.price).toFixed(2) }}
+                          </span>
+                          <span v-if="relatedProduct.on_sale && relatedProduct.sale_price" class="text-red-600 font-bold">
+                            Rs{{ parseFloat(relatedProduct.sale_price).toFixed(2) }}
+                          </span>
+                          <span v-else class="text-blue-700 font-bold">
+                            Rs{{ parseFloat(relatedProduct.price).toFixed(2) }}
+                          </span>
+                        </div>
+                        
+                        <router-link :to="'/products/' + relatedProduct.id" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition">
+                          View
+                        </router-link>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
+            </div>
+            
+            <!-- Next button -->
+            <button 
+              @click="slideRelatedProducts('next')" 
+              class="absolute right-0 top-1/2 -translate-y-1/2 -mr-4 z-10 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 focus:outline-none border border-gray-200"
+              :class="{'opacity-50 cursor-not-allowed': relatedSlideIndex >= maxRelatedSlideIndex}"
+              :disabled="relatedSlideIndex >= maxRelatedSlideIndex"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+            
+            <!-- Slide indicators and auto-play control -->
+            <div class="flex justify-center items-center mt-6 gap-2">
+              <button 
+                v-for="(_, index) in Math.ceil(relatedProducts.length / 5)" 
+                :key="index"
+                @click="relatedSlideIndex = index"
+                class="w-2 h-2 mx-1 rounded-full focus:outline-none"
+                :class="relatedSlideIndex === index ? 'bg-blue-600' : 'bg-gray-300'"
+              ></button>
+              
+              <!-- Auto-play toggle -->
+              <button 
+                @click="toggleAutoPlay" 
+                class="ml-4 text-sm text-gray-600 flex items-center gap-1 py-1 px-2 rounded hover:bg-gray-100"
+              >
+                <svg v-if="autoPlayActive" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                </svg>
+                <span>{{ autoPlayActive ? 'Pause' : 'Auto-play' }}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -484,6 +633,55 @@
     
     <!-- Footer -->
     <Footer />
+
+    <!-- Custom Notification Popup -->
+    <transition name="fade">
+      <div v-if="notification.show" class="fixed inset-0 flex items-center justify-center z-50 p-4">
+        <div class="absolute inset-0 bg-black bg-opacity-50" @click="closeNotification"></div>
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full relative overflow-hidden">
+          <!-- Colored header based on notification type -->
+          <div :class="`h-1.5 w-full ${notification.type === 'error' ? 'bg-red-500' : notification.type === 'success' ? 'bg-green-500' : 'bg-blue-500'}`"></div>
+          
+          <div class="p-6">
+            <!-- Icon -->
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full mb-4" 
+                :class="notification.type === 'error' ? 'bg-red-100 text-red-500' : notification.type === 'success' ? 'bg-green-100 text-green-500' : 'bg-blue-100 text-blue-500'">
+              <svg v-if="notification.type === 'error'" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <svg v-else-if="notification.type === 'success'" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            
+            <!-- Title -->
+            <h3 class="text-lg font-medium text-center mb-2" 
+                :class="notification.type === 'error' ? 'text-red-800' : notification.type === 'success' ? 'text-green-800' : 'text-blue-800'">
+              {{ notification.title }}
+            </h3>
+            
+            <!-- Message -->
+            <p class="text-sm text-gray-600 text-center mb-6">{{ notification.message }}</p>
+            
+            <!-- Buttons -->
+            <div class="flex justify-center gap-3">
+              <button v-if="notification.showCancel" 
+                     @click="closeNotification" 
+                     class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                {{ notification.cancelText }}
+              </button>
+              <button @click="handleNotificationAction" 
+                     :class="`px-4 py-2 rounded-md shadow-sm text-sm font-medium text-white focus:outline-none ${notification.type === 'error' ? 'bg-red-600 hover:bg-red-700' : notification.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`">
+                {{ notification.actionText }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -515,7 +713,7 @@ export default {
     const router = useRouter();
     const loading = ref(true);
     const product = ref(null);
-    const quantity = ref(0);
+    const quantity = ref(1);
     const selectedSize = ref(null);
     const selectedColor = ref(null);
     const inWishlist = ref(false);
@@ -525,6 +723,11 @@ export default {
     const categoriesDropdownOpen = ref(false);
     const accountDropdownOpen = ref(false);
     const cartDropdownOpen = ref(false);
+    // Related products data
+    const relatedProducts = ref([]);
+    const loadingRelatedProducts = ref(false);
+    const relatedProductsError = ref(null);
+    
     const mockProducts = ref({
       1: {
         id: 1,
@@ -855,16 +1058,59 @@ export default {
         
         // Check if product is in wishlist
         if (product.value) {
-          // Set quantity to 0 if product is out of stock
+          // Set quantity to 0 if product is out of stock, otherwise set to 1
           if (product.value.stock <= 0) {
             quantity.value = 0;
+          } else {
+            quantity.value = 1; // Set default quantity to 1 if stock is available
           }
           
           inWishlist.value = isInWishlistSync(product.value.id);
           
           // Fetch reviews after product is loaded
           fetchReviews();
+          
+          // Fetch related products after product is loaded
+          fetchRelatedProducts();
         }
+
+        // Set the initial main image
+        currentImage.value = product.value.image_url;
+
+        // Debug the raw API response
+        console.log('Raw API response:', response.data);
+
+        // Load additional images with more robust checks for different API response structures
+        if (product.value.images && Array.isArray(product.value.images.additional)) {
+          // If product.images.additional array exists, use it directly
+          productAdditionalImages.value = product.value.images.additional;
+          console.log('Loaded additional images from images.additional:', productAdditionalImages.value);
+        } else if (product.value.productImages && Array.isArray(product.value.productImages)) {
+          // If product.productImages array exists (direct API response format)
+          productAdditionalImages.value = product.value.productImages.map(img => img.image_url);
+          console.log('Loaded additional images from productImages array:', productAdditionalImages.value);
+        } else {
+          // Try to fetch product images separately if not included in initial response
+          try {
+            const imagesResponse = await axios.get(`/api/products/${route.params.id}/images`);
+            if (imagesResponse.data && (imagesResponse.data.data || Array.isArray(imagesResponse.data))) {
+              const imagesData = imagesResponse.data.data || imagesResponse.data;
+              if (Array.isArray(imagesData)) {
+                productAdditionalImages.value = imagesData.map(img => img.image_url || img);
+                console.log('Loaded additional images from separate API call:', productAdditionalImages.value);
+              }
+            }
+          } catch (imageError) {
+            console.error('Error fetching additional product images:', imageError);
+            productAdditionalImages.value = [];
+          }
+        }
+
+        // Debug the response data structure
+        console.log('Product data from API:', product.value);
+        console.log('Images data structure:', product.value?.images || 'No images property');
+        console.log('productImages data structure:', product.value?.productImages || 'No productImages property');
+        console.log('Final productAdditionalImages array:', productAdditionalImages.value);
       } catch (error) {
         console.error('Error fetching product details, using mock data:', error);
         
@@ -888,15 +1134,31 @@ export default {
       }
     };
 
+    // Add this new function to handle image loading errors
+    const handleImageError = (event, index) => {
+      console.error(`Error loading image at index ${index}:`, event);
+      // Optionally replace with a placeholder image
+      event.target.src = "https://via.placeholder.com/150?text=Image+Error";
+    };
+
+    // Update the getImageUrl function to better handle different image path formats
     const getImageUrl = (imagePath) => {
+      if (!imagePath) {
+        return "https://via.placeholder.com/150?text=No+Image";
+      }
+      
       // If the path is a full URL, return it directly
-      if (imagePath && imagePath.startsWith('http')) {
+      if (imagePath.startsWith('http')) {
         return imagePath;
       }
       
+      // Handle paths that might already have "storage/" in them
+      if (imagePath.startsWith('storage/')) {
+        return `http://localhost:8000/${imagePath}`;
+      }
+      
       // Otherwise, assume it's a relative path on the server
-      return imagePath ? `http://localhost:8000/storage/${imagePath}` 
-        : 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?ixlib=rb-4.0.3&auto=format&fit=crop&w=1593&q=80';
+      return `http://localhost:8000/storage/${imagePath}`;
     };
 
     const addToCartLocal = () => {
@@ -904,25 +1166,54 @@ export default {
       
       // Check if product is in stock
       if (product.value.stock <= 0) {
-        alert('Sorry, this product is out of stock');
+        showNotification({
+          type: 'error',
+          title: 'Out of Stock',
+          message: 'Sorry, this product is out of stock'
+        });
+        return;
+      }
+      
+      // Check if quantity is valid (must be at least 1)
+      if (quantity.value < 1) {
+        showNotification({
+          type: 'error',
+          title: 'Invalid Quantity',
+          message: 'Quantity must be at least 1 to add to cart',
+          action: () => { quantity.value = 1; } // Automatically adjust to minimum
+        });
         return;
       }
       
       // Check if requested quantity exceeds stock
       if (quantity.value > product.value.stock) {
-        alert(`Sorry, only ${product.value.stock} items are available in stock. Please reduce your quantity.`);
-        quantity.value = product.value.stock; // Automatically adjust to max available
+        showNotification({
+          type: 'error',
+          title: 'Limited Stock',
+          message: `Sorry, only ${product.value.stock} items are available in stock. Please reduce your quantity.`,
+          action: () => { quantity.value = product.value.stock; } // Automatically adjust to max available
+        });
         return;
       }
       
       // Validate selections if variants exist
       if (getSizeVariants.value.length > 0 && !selectedSize.value) {
-        alert('Please select a size option by clicking on one of the size buttons');
+        showNotification({
+          type: 'info',
+          title: 'Size Selection Required',
+          message: 'Please select a size option by clicking on one of the size buttons',
+          actionText: 'Select Size'
+        });
         return;
       }
       
       if (getColorVariants.value.length > 0 && !selectedColor.value) {
-        alert('Please select a color option by clicking on one of the color buttons');
+        showNotification({
+          type: 'info',
+          title: 'Color Selection Required',
+          message: 'Please select a color option by clicking on one of the color buttons',
+          actionText: 'Select Color'
+        });
         return;
       }
       
@@ -948,7 +1239,11 @@ export default {
       
       if (!result.success) {
         // Show error message if adding to cart failed
-        alert(result.message);
+        showNotification({
+          type: 'error',
+          title: 'Error',
+          message: result.message
+        });
         return;
       }
       
@@ -960,6 +1255,17 @@ export default {
       
       // Force update the cartItemCount ref
       cartItemCount.value = getUniqueCartItemCount();
+      
+      // Show a success notification
+      showNotification({
+        type: 'success',
+        title: 'Added to Cart',
+        message: `${product.value.name} has been added to your cart.`,
+        actionText: 'View Cart',
+        showCancel: true,
+        cancelText: 'Continue Shopping',
+        action: () => { router.push('/cart'); }
+      });
       
       // Show a subtle visual feedback instead of alert
       const addToCartButton = document.querySelector('[data-add-to-cart]');
@@ -985,25 +1291,54 @@ export default {
       
       // Check if product is in stock
       if (product.value.stock <= 0) {
-        alert('Sorry, this product is out of stock');
+        showNotification({
+          type: 'error',
+          title: 'Out of Stock',
+          message: 'Sorry, this product is out of stock'
+        });
+        return;
+      }
+      
+      // Check if quantity is valid (must be at least 1)
+      if (quantity.value < 1) {
+        showNotification({
+          type: 'error',
+          title: 'Invalid Quantity',
+          message: 'Quantity must be at least 1 to proceed with purchase',
+          action: () => { quantity.value = 1; } // Automatically adjust to minimum
+        });
         return;
       }
       
       // Check if requested quantity exceeds stock
       if (quantity.value > product.value.stock) {
-        alert(`Sorry, only ${product.value.stock} items are available in stock. Please reduce your quantity.`);
-        quantity.value = product.value.stock; // Automatically adjust to max available
+        showNotification({
+          type: 'error',
+          title: 'Limited Stock',
+          message: `Sorry, only ${product.value.stock} items are available in stock. Please reduce your quantity.`,
+          action: () => { quantity.value = product.value.stock; } // Automatically adjust to max available
+        });
         return;
       }
       
       // Validate selections if variants exist
       if (getSizeVariants.value.length > 0 && !selectedSize.value) {
-        alert('Please select a size option by clicking on one of the size buttons');
+        showNotification({
+          type: 'info',
+          title: 'Size Selection Required',
+          message: 'Please select a size option by clicking on one of the size buttons',
+          actionText: 'Select Size'
+        });
         return;
       }
       
       if (getColorVariants.value.length > 0 && !selectedColor.value) {
-        alert('Please select a color option by clicking on one of the color buttons');
+        showNotification({
+          type: 'info',
+          title: 'Color Selection Required',
+          message: 'Please select a color option by clicking on one of the color buttons',
+          actionText: 'Select Color'
+        });
         return;
       }
       
@@ -1029,7 +1364,11 @@ export default {
       
       if (!buyResult.success) {
         // Show error message if buying now failed
-        alert(buyResult.message);
+        showNotification({
+          type: 'error',
+          title: 'Error',
+          message: buyResult.message
+        });
         return;
       }
       
@@ -1047,17 +1386,17 @@ export default {
     // Validate and adjust quantity when manually entered
     const validateQuantity = () => {
       // Convert to number and ensure it's an integer
-      quantity.value = parseInt(quantity.value) || 1;
-      
-      // Enforce minimum of 1
-      if (quantity.value < 1) {
-        quantity.value = 1;
-      }
+      quantity.value = parseInt(quantity.value) || 0;
       
       // Set quantity to 0 if product is out of stock
       if (product.value && product.value.stock <= 0) {
         quantity.value = 0;
         return;
+      }
+      
+      // Enforce minimum of 1 when stock is available
+      if (product.value && product.value.stock > 0 && quantity.value < 1) {
+        quantity.value = 1;
       }
       
       // Enforce maximum stock limit
@@ -1152,6 +1491,45 @@ export default {
       return discountPercent;
     };
 
+    // Get a short description from a longer text
+    const getShortDescription = (text) => {
+      if (!text) return '';
+      
+      // Strip HTML tags
+      const strippedText = text.replace(/<[^>]*>?/gm, '');
+      
+      // Return first 100 characters with ellipsis if needed
+      return strippedText.length > 100 ? strippedText.substring(0, 100) + '...' : strippedText;
+    };
+    
+    // Fetch related products
+    const fetchRelatedProducts = async () => {
+      if (!product.value || !product.value.id) return;
+      
+      loadingRelatedProducts.value = true;
+      relatedProductsError.value = null;
+      
+      try {
+        const response = await axios.get(`/api/products/${product.value.id}/related`);
+        
+        if (response.data && response.data.success && response.data.data) {
+          relatedProducts.value = response.data.data;
+        } else if (response.data) {
+          relatedProducts.value = response.data;
+        } else {
+          relatedProductsError.value = 'Failed to load related products';
+        }
+      } catch (error) {
+        console.error('Error fetching related products:', error);
+        relatedProductsError.value = 'Error loading related products';
+        
+        // For development, use placeholder data if API fails
+        relatedProducts.value = [];
+      } finally {
+        loadingRelatedProducts.value = false;
+      }
+    };
+
     // Add onMounted hook to fetch product details when component loads
     onMounted(() => {
       console.log('ProductDetail component mounted, fetching product with ID:', route.params.id);
@@ -1175,16 +1553,34 @@ export default {
         checkWishlistStatus();
       };
       
+      // Function to handle window resize for carousel
+      const handleResize = () => {
+        // Ensure relatedSlideIndex is valid after resize
+        relatedSlideIndex.value = Math.min(relatedSlideIndex.value, maxRelatedSlideIndex.value);
+      };
+      
       // Listen for wishlist updates
       document.addEventListener('wishlist-updated', handleWishlistUpdate);
       
       // Listen for cart updates
       document.addEventListener('cart-updated', handleCartUpdate);
       
+      // Listen for window resize
+      window.addEventListener('resize', handleResize);
+      
+      // Start auto-play if enabled
+      if (autoPlayActive.value) {
+        startAutoPlay();
+      }
+      
       // Cleanup function
       onUnmounted(() => {
         document.removeEventListener('wishlist-updated', handleWishlistUpdate);
         document.removeEventListener('cart-updated', handleCartUpdate);
+        window.removeEventListener('resize', handleResize);
+        
+        // Clean up auto-play interval
+        stopAutoPlay();
       });
     });
     
@@ -1195,6 +1591,142 @@ export default {
         fetchProductDetails();
       }
     });
+
+    const currentImage = ref(null);
+    const productAdditionalImages = ref([]);
+    const hasAdditionalImages = computed(() => {
+      return product.value && 
+        product.value.images && 
+        product.value.images.additional && 
+        product.value.images.additional.length > 0;
+    });
+
+    const relatedSlideIndex = ref(0);
+    const maxRelatedSlideIndex = computed(() => {
+      const visibleItems = window.innerWidth < 640 ? 1 : 
+                          window.innerWidth < 768 ? 2 :
+                          window.innerWidth < 1024 ? 3 : 5;
+      return Math.max(0, Math.ceil(relatedProducts.value.length / visibleItems) - 1);
+    });
+
+    const slideRelatedProducts = (direction) => {
+      if (direction === 'prev') {
+        relatedSlideIndex.value = Math.max(0, relatedSlideIndex.value - 1);
+      } else if (direction === 'next') {
+        relatedSlideIndex.value = Math.min(maxRelatedSlideIndex.value, relatedSlideIndex.value + 1);
+      }
+    };
+
+    const getSlidePercentage = () => {
+      const visibleItems = window.innerWidth < 640 ? 1 : 
+                          window.innerWidth < 768 ? 2 :
+                          window.innerWidth < 1024 ? 3 : 5;
+      return 100 / visibleItems;
+    };
+
+    // Touch handling variables
+    const touchStartX = ref(0);
+    const touchEndX = ref(0);
+    
+    // Auto-play functionality
+    const autoPlayActive = ref(false);
+    const autoPlayInterval = ref(null);
+    
+    const startAutoPlay = () => {
+      if (autoPlayInterval.value) {
+        clearInterval(autoPlayInterval.value);
+      }
+      
+      autoPlayInterval.value = setInterval(() => {
+        if (relatedSlideIndex.value < maxRelatedSlideIndex.value) {
+          relatedSlideIndex.value++;
+        } else {
+          relatedSlideIndex.value = 0; // Loop back to start
+        }
+      }, 3000); // Change slide every 3 seconds
+    };
+    
+    const stopAutoPlay = () => {
+      if (autoPlayInterval.value) {
+        clearInterval(autoPlayInterval.value);
+        autoPlayInterval.value = null;
+      }
+    };
+    
+    const toggleAutoPlay = () => {
+      autoPlayActive.value = !autoPlayActive.value;
+      
+      if (autoPlayActive.value) {
+        startAutoPlay();
+      } else {
+        stopAutoPlay();
+      }
+    };
+    
+    // Handle touch events for mobile swipe
+    const handleTouchStart = (e) => {
+      touchStartX.value = e.touches[0].clientX;
+    };
+    
+    const handleTouchMove = (e) => {
+      touchEndX.value = e.touches[0].clientX;
+    };
+    
+    const handleTouchEnd = () => {
+      const swipeDistance = touchEndX.value - touchStartX.value;
+      
+      // Check if it's a significant swipe (more than 50px)
+      if (Math.abs(swipeDistance) > 50) {
+        if (swipeDistance > 0) {
+          // Swipe right - go to previous slide
+          slideRelatedProducts('prev');
+        } else {
+          // Swipe left - go to next slide
+          slideRelatedProducts('next');
+        }
+      }
+      
+      // Reset touch values
+      touchStartX.value = 0;
+      touchEndX.value = 0;
+    };
+
+    // Notification functionality
+    const notification = ref({
+      show: false,
+      type: 'info', // 'info', 'success', 'error'
+      title: '',
+      message: '',
+      actionText: 'OK',
+      cancelText: 'Cancel',
+      showCancel: false,
+      action: null // Callback function for the action button
+    });
+    
+    const showNotification = (options) => {
+      notification.value = {
+        show: true,
+        type: 'info',
+        title: '',
+        message: '',
+        actionText: 'OK',
+        cancelText: 'Cancel',
+        showCancel: false,
+        action: null,
+        ...options
+      };
+    };
+    
+    const closeNotification = () => {
+      notification.value.show = false;
+    };
+    
+    const handleNotificationAction = () => {
+      if (notification.value.action && typeof notification.value.action === 'function') {
+        notification.value.action();
+      }
+      closeNotification();
+    };
 
     return {
       loading,
@@ -1240,7 +1772,31 @@ export default {
       getReviewImageUrl,
       validateQuantity,
       incrementQuantity,
-      calculateDiscountPercentage
+      calculateDiscountPercentage,
+      currentImage,
+      productAdditionalImages,
+      hasAdditionalImages,
+      relatedProducts,
+      loadingRelatedProducts,
+      relatedProductsError,
+      getShortDescription,
+      fetchRelatedProducts,
+      relatedSlideIndex,
+      maxRelatedSlideIndex,
+      slideRelatedProducts,
+      getSlidePercentage,
+      handleTouchStart,
+      handleTouchMove,
+      handleTouchEnd,
+      autoPlayActive,
+      autoPlayInterval,
+      startAutoPlay,
+      stopAutoPlay,
+      toggleAutoPlay,
+      notification,
+      showNotification,
+      closeNotification,
+      handleNotificationAction
     };
   }
 }
@@ -1273,5 +1829,23 @@ export default {
     transform: scale(1);
     box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
   }
+}
+
+/* Modal Transition Animations */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.fade-enter-to,
+.fade-leave-from {
+  opacity: 1;
+  transform: scale(1);
 }
 </style> 

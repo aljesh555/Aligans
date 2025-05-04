@@ -99,21 +99,60 @@ class SettingsController extends Controller
      */
     public function getSocialLinks()
     {
-        $socialLinks = Setting::get('social_links', [
-            'facebook' => '',
-            'instagram' => '',
-            'twitter' => '',
-            'youtube' => ''
-        ]);
+        // Check if we have a setting with repeater format first
+        $socialLinksSetting = Setting::where('key', 'social_links')->first();
         
-        // Ensure socialLinks is properly decoded to an object/array not a JSON string
-        if (is_string($socialLinks)) {
+        if ($socialLinksSetting) {
+            $socialLinks = $socialLinksSetting->value;
+            
+            // Handle different possible formats
+            if (is_string($socialLinks) && json_decode($socialLinks) !== null) {
             $socialLinks = json_decode($socialLinks, true);
         }
+            
+            // Check if the format is repeater style
+            if (isset($socialLinks[0]) && isset($socialLinks[0]['key']) && isset($socialLinks[0]['value'])) {
+                // It's already in repeater format, return it directly
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'social_links' => $socialLinks
+                    ]
+                ]);
+            } else {
+                // It's in key-value object format, convert to repeater format
+                $repeaterFormat = [];
+                foreach ($socialLinks as $platform => $url) {
+                    if (!empty($url)) {
+                        $repeaterFormat[] = [
+                            'key' => ucfirst($platform),
+                            'value' => $url
+                        ];
+                    }
+                }
+                
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'social_links' => $repeaterFormat
+                    ]
+                ]);
+            }
+        }
+        
+        // Fallback to default social links in repeater format
+        $defaultLinks = [
+            ['key' => 'Facebook', 'value' => 'facebook.com'],
+            ['key' => 'Instagram', 'value' => 'https://www.instagram.com/'],
+            ['key' => 'Twitter', 'value' => 'https://twitter.com'],
+            ['key' => 'Yutube', 'value' => 'https://www.youtube.com/']
+        ];
         
         return response()->json([
             'success' => true,
-            'data' => $socialLinks
+            'data' => [
+                'social_links' => $defaultLinks
+            ]
         ]);
     }
 
@@ -348,5 +387,176 @@ class SettingsController extends Controller
             'message' => 'Terms and conditions updated successfully',
             'data' => $termsData
         ]);
+    }
+
+    /**
+     * Get footer about text setting
+     */
+    public function getFooterAboutText()
+    {
+        try {
+            $setting = Setting::where('key', 'footer_about_text')->first();
+            
+            if ($setting) {
+                // Get the raw value
+                $value = $setting->value;
+                
+                // Handle double-encoded JSON string (common with Filament forms)
+                // First, try to decode once
+                if (is_string($value)) {
+                    try {
+                        $decoded1 = json_decode($value, true);
+                        
+                        // If still a string and looks like a JSON string, decode again
+                        if (is_string($decoded1) && 
+                            (str_starts_with($decoded1, '"') && str_ends_with($decoded1, '"'))) {
+                            try {
+                                $decoded2 = json_decode($decoded1, true);
+                                $value = $decoded2;
+                            } catch (\Exception $e) {
+                                // If second decoding fails, keep the first decoded value
+                                $value = $decoded1;
+                            }
+                        } else {
+                            // Use the first decoded value
+                            $value = $decoded1;
+                        }
+                    } catch (\Exception $e) {
+                        // Keep original value if decoding fails
+                        \Log::error('Failed to decode JSON value: ' . $e->getMessage());
+                    }
+                }
+                
+                return response()->json([
+                    'success' => true,
+                    'data' => $value
+                ]);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Setting not found'
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching footer about text: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Get setting by key
+     */
+    public function getByKey($key)
+    {
+        try {
+            $setting = Setting::where('key', $key)->first();
+            
+            if ($setting) {
+                // Get the raw value
+                $value = $setting->value;
+                
+                // Handle double-encoded JSON string (common with Filament forms)
+                // First, try to decode once
+                if (is_string($value)) {
+                    try {
+                        $decoded1 = json_decode($value, true);
+                        
+                        // If still a string and looks like a JSON string, decode again
+                        if (is_string($decoded1) && 
+                            (str_starts_with($decoded1, '"') && str_ends_with($decoded1, '"'))) {
+                            try {
+                                $decoded2 = json_decode($decoded1, true);
+                                $value = $decoded2;
+                            } catch (\Exception $e) {
+                                // If second decoding fails, keep the first decoded value
+                                $value = $decoded1;
+                            }
+                        } else {
+                            // Use the first decoded value
+                            $value = $decoded1;
+                        }
+                    } catch (\Exception $e) {
+                        // Keep original value if decoding fails
+                        \Log::error('Failed to decode JSON value: ' . $e->getMessage());
+                    }
+                }
+                
+                return response()->json([
+                    'success' => true,
+                    'key' => $setting->key,
+                    'data' => $value,
+                    'type' => $setting->type,
+                    'group' => $setting->group
+                ]);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Setting not found'
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching setting by key: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get logo from settings
+     */
+    public function getLogo()
+    {
+        try {
+            $setting = Setting::where('key', 'logo')->first();
+            
+            if ($setting) {
+                // Get the raw value
+                $value = $setting->value;
+                $baseUrl = url('/');
+                
+                // Handle quoted values
+                if (is_string($value) && strpos($value, '"') === 0 && strrpos($value, '"') === strlen($value) - 1) {
+                    $value = substr($value, 1, -1); // Remove surrounding quotes
+                }
+                
+                // Handle new format with UUID key in JSON object 
+                // (Filament LiveWire upload format)
+                if (is_array($value) && !empty($value)) {
+                    // Get the first value from the array (the file path)
+                    $value = reset($value);
+                }
+                
+                // Create a logo response similar to what the LogoController returns
+                $logo = [
+                    'id' => 1,
+                    'image_path' => $value,
+                    'image_url' => $baseUrl . '/storage/' . $value,
+                    'is_active' => true,
+                    'file_exists' => true,
+                    'base64_image' => null
+                ];
+                
+                return response()->json($logo);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Logo not found'
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching logo setting: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

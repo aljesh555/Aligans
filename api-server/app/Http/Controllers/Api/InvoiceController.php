@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Auth;
 
 class InvoiceController extends Controller
 {
@@ -22,17 +23,24 @@ class InvoiceController extends Controller
     public function download($orderId, Request $request)
     {
         try {
-            // Authorize the request
-            $user = $request->user();
-            $order = Order::with(['orderItems.product', 'paymentDetails'])
+            // Check for admin user in Filament admin panel
+            $isAdminPanel = $request->hasHeader('Referer') && 
+                            strpos($request->header('Referer'), '/apanel/') !== false;
+            
+            $order = Order::with(['orderItems.product', 'paymentDetails', 'user'])
                 ->findOrFail($orderId);
                 
-            // Check if the user is authorized to download this invoice
-            if ($order->user_id !== $user->id && $user->role !== 'admin') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized'
-                ], 403);
+            // Skip authorization check for admin panel requests
+            if (!$isAdminPanel) {
+                // Authorize the request for API clients
+                $user = $request->user();
+                
+                if (!$user || ($order->user_id !== $user->id && $user->role !== 'admin')) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Unauthorized'
+                    ], 403);
+                }
             }
             
             // Create the PDF using DomPDF
@@ -43,6 +51,9 @@ class InvoiceController extends Controller
                 $order->order_number = "ORD-" . $order->id . "-" . time();
                 $order->save();
             }
+            
+            // Use the order's user or a default user for admin-generated PDFs
+            $user = $order->user ?? User::where('role', 'admin')->first();
             
             // Generate PDF view
             $pdf->loadView('invoices.order', [
@@ -63,9 +74,13 @@ class InvoiceController extends Controller
         } catch (\Exception $e) {
             \Log::error('Error generating invoice PDF: ' . $e->getMessage(), [
                 'order_id' => $orderId,
-                'user_id' => $request->user()->id ?? 'unknown',
                 'trace' => $e->getTraceAsString()
             ]);
+            
+            // If called from admin panel, redirect back with error
+            if (isset($isAdminPanel) && $isAdminPanel) {
+                return redirect()->back()->with('error', 'Failed to generate invoice: ' . $e->getMessage());
+            }
             
             return response()->json([
                 'success' => false,

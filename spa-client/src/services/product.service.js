@@ -57,6 +57,93 @@ class ProductService {
   }
 
   /**
+   * Comprehensive search across products, brands, and categories
+   * @param {String} query - Search query string
+   * @param {Number} page - Page number for pagination
+   * @returns {Promise} Promise with comprehensive search results
+   */
+  async comprehensiveSearch(query, page = 1) {
+    try {
+      console.log(`Performing comprehensive search with query: "${query}"`);
+      
+      // Create an object to store all search results
+      const searchResults = {
+        products: [],
+        brands: [],
+        categories: []
+      };
+      
+      // Search products
+      try {
+        const productResponse = await this.searchProducts(query, page);
+        if (productResponse) {
+          // Extract products based on different possible response formats
+          if (productResponse.data) {
+            searchResults.products = productResponse.data;
+          } else if (productResponse.products) {
+            searchResults.products = productResponse.products;
+          } else if (Array.isArray(productResponse)) {
+            searchResults.products = productResponse;
+          }
+        }
+      } catch (err) {
+        console.error('Error searching products:', err);
+      }
+      
+      // Search brands
+      try {
+        const brandResponse = await axios.get(`${API_URL}/brands`, {
+          params: { search: query }
+        });
+        
+        if (brandResponse.data) {
+          // Extract brands based on different possible response formats
+          if (brandResponse.data.data) {
+            searchResults.brands = brandResponse.data.data;
+          } else if (brandResponse.data.brands) {
+            searchResults.brands = brandResponse.data.brands;
+          } else if (Array.isArray(brandResponse.data)) {
+            searchResults.brands = brandResponse.data;
+          }
+        }
+      } catch (err) {
+        console.error('Error searching brands:', err);
+      }
+      
+      // Search categories
+      try {
+        const categoryResponse = await axios.get(`${API_URL}/categories`, {
+          params: { search: query }
+        });
+        
+        if (categoryResponse.data) {
+          // Extract categories based on different possible response formats
+          if (categoryResponse.data.data) {
+            searchResults.categories = categoryResponse.data.data;
+          } else if (categoryResponse.data.categories) {
+            searchResults.categories = categoryResponse.data.categories;
+          } else if (Array.isArray(categoryResponse.data)) {
+            searchResults.categories = categoryResponse.data;
+          }
+        }
+      } catch (err) {
+        console.error('Error searching categories:', err);
+      }
+      
+      console.log('Comprehensive search results:', {
+        productsFound: searchResults.products.length,
+        brandsFound: searchResults.brands.length,
+        categoriesFound: searchResults.categories.length
+      });
+      
+      return searchResults;
+    } catch (error) {
+      console.error('Comprehensive search error:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get a single product by ID
    * @param {Number} id - Product ID
    * @returns {Promise} Promise with product data

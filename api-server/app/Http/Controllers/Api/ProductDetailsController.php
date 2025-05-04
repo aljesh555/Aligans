@@ -16,7 +16,9 @@ class ProductDetailsController extends Controller
      */
     public function getProductDetails($id)
     {
-        $product = Product::with('category')->find($id);
+        $product = Product::with(['category', 'productImages' => function($query) {
+            $query->where('is_active', true)->orderBy('sort_order');
+        }])->find($id);
         
         if (!$product) {
             return response()->json([
@@ -24,6 +26,11 @@ class ProductDetailsController extends Controller
                 'message' => 'Product not found'
             ], 404);
         }
+        
+        // Get additional images
+        $additionalImages = $product->productImages->map(function ($image) {
+            return $image->image_url;
+        })->toArray();
         
         return response()->json([
             'success' => true,
@@ -46,6 +53,7 @@ class ProductDetailsController extends Controller
                     'main' => $product->image,
                     'secondary' => $product->image_url,
                     'thumbnail' => $product->thumbnail,
+                    'additional' => $additionalImages,
                 ],
                 'featured' => (bool) $product->featured,
                 'is_new_arrival' => (bool) $product->is_new_arrival,
@@ -131,6 +139,32 @@ class ProductDetailsController extends Controller
     }
     
     /**
+     * Get product images
+     */
+    public function getProductImages($id)
+    {
+        $product = Product::find($id);
+        
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Product not found'
+            ], 404);
+        }
+        
+        // Get all active product images ordered by sort_order
+        $images = $product->productImages()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
+        
+        return response()->json([
+            'success' => true,
+            'data' => $images
+        ]);
+    }
+    
+    /**
      * Submit a product review
      */
     public function submitReview(Request $request, $id)
@@ -188,6 +222,95 @@ class ProductDetailsController extends Controller
                 'rating' => $review->rating,
                 'title' => $review->title,
             ]
+        ]);
+    }
+    
+    /**
+     * Get related products based on category, brand or tags
+     */
+    public function getRelatedProducts($id)
+    {
+        $product = Product::with('category')->find($id);
+        
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Product not found'
+            ], 404);
+        }
+        
+        // Define number of related products to return
+        $limit = 5;
+        
+        // Fetch products from the same category, excluding the current product
+        $relatedProducts = Product::where('id', '!=', $id)
+            ->where(function ($query) use ($product) {
+                // Match by category if available
+                if ($product->category_id) {
+                    $query->where('category_id', $product->category_id);
+                }
+                
+                // Match by brand if available
+                if ($product->brand_id) {
+                    $query->orWhere('brand_id', $product->brand_id);
+                }
+            })
+            ->where('status', 'active')
+            ->inRandomOrder()
+            ->limit($limit)
+            ->get();
+        
+        // If we don't have enough products, fill with popular products
+        if ($relatedProducts->count() < $limit) {
+            $neededCount = $limit - $relatedProducts->count();
+            $excludeIds = $relatedProducts->pluck('id')->push($id)->toArray();
+            
+            // First try to get on sale products
+            $saleProducts = Product::where('id', '!=', $id)
+                ->whereNotIn('id', $excludeIds)
+                ->where('status', 'active')
+                ->where('on_sale', true)
+                ->inRandomOrder()
+                ->limit($neededCount)
+                ->get();
+                
+            $relatedProducts = $relatedProducts->concat($saleProducts);
+            
+            // If still not enough, get new arrivals
+            if ($relatedProducts->count() < $limit) {
+                $neededCount = $limit - $relatedProducts->count();
+                $excludeIds = $relatedProducts->pluck('id')->push($id)->toArray();
+                
+                $newArrivals = Product::where('id', '!=', $id)
+                    ->whereNotIn('id', $excludeIds)
+                    ->where('status', 'active')
+                    ->where('is_new_arrival', true)
+                    ->inRandomOrder()
+                    ->limit($neededCount)
+                    ->get();
+                    
+                $relatedProducts = $relatedProducts->concat($newArrivals);
+            }
+            
+            // If still not enough, get any active products
+            if ($relatedProducts->count() < $limit) {
+                $neededCount = $limit - $relatedProducts->count();
+                $excludeIds = $relatedProducts->pluck('id')->push($id)->toArray();
+                
+                $anyProducts = Product::where('id', '!=', $id)
+                    ->whereNotIn('id', $excludeIds)
+                    ->where('status', 'active')
+                    ->inRandomOrder()
+                    ->limit($neededCount)
+                    ->get();
+                    
+                $relatedProducts = $relatedProducts->concat($anyProducts);
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'data' => $relatedProducts
         ]);
     }
 }

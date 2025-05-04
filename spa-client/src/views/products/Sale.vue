@@ -4,20 +4,6 @@
     <Header />
 
     <div class="container mx-auto px-4 py-8">
-      <!-- Sale Page Banner -->
-      <div class="relative mb-8 rounded-lg overflow-hidden shadow-lg">
-        <div class="bg-gradient-to-r from-red-600 to-red-800 h-64 flex items-center justify-center">
-          <div class="absolute inset-0 opacity-20 bg-pattern"></div>
-          <div class="text-center px-6 relative z-10 text-white">
-            <h1 class="text-4xl md:text-5xl font-bold mb-4">SALE</h1>
-            <p class="text-xl md:text-2xl max-w-2xl mx-auto">Limited time offers on your favorite sports gear!</p>
-            <div class="mt-6 inline-block bg-white text-red-600 font-bold px-6 py-3 rounded-full text-lg">
-              Up to 50% OFF
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Filters and Sorting -->
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <h2 class="text-2xl font-bold">On Sale Products</h2>
@@ -104,7 +90,7 @@
           </template>
           
           <!-- Product Info -->
-          <div class="p-4">
+          <div class="p-4 flex flex-col min-h-[200px]">
             <div class="flex justify-between items-start mb-2">
               <h2 class="text-lg font-bold">{{ product.name }}</h2>
             </div>
@@ -112,17 +98,17 @@
             <!-- Price with Discount -->
             <div class="mb-2">
               <div class="flex items-center gap-2">
-                <span class="text-gray-400 line-through">${{ parseFloat(product.price).toFixed(2) }}</span>
-                <span class="text-red-600 font-bold text-xl">${{ parseFloat(product.discount_price).toFixed(2) }}</span>
+                <span class="text-gray-400 line-through">Rs {{ parseFloat(product.price).toFixed(2) }}</span>
+                <span class="text-red-600 font-bold text-xl">Rs {{ parseFloat(product.discount_price).toFixed(2) }}</span>
               </div>
               <span class="text-xs text-gray-500" v-if="product.sale_ends_at">
                 Sale ends {{ formatDate(product.sale_ends_at) }}
               </span>
             </div>
             
-            <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ product.description }}</p>
+            <div class="text-gray-600 text-sm mb-4 line-clamp-2 flex-grow" v-html="cleanDescription(product.description)"></div>
             
-            <div class="flex justify-between items-center">
+            <div class="flex justify-between items-center mt-auto">
               <router-link 
                 :to="`/products/${product.id}`" 
                 class="text-red-500 hover:text-red-700 font-medium"
@@ -337,6 +323,16 @@ export default {
       return new Date(dateString).toLocaleDateString(undefined, options);
     };
     
+    const cleanDescription = (description) => {
+      if (!description) return '';
+      
+      // Strip HTML tags but preserve spacing
+      const textOnly = description.replace(/<[^>]*>/g, '');
+      
+      // Remove extra spaces and &nbsp; entities
+      return textOnly.replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+    };
+    
     onMounted(() => {
       document.title = 'Sale | Aligans Sports';
       fetchCategories();
@@ -367,6 +363,7 @@ export default {
       getImageUrl,
       addToCart,
       formatDate,
+      cleanDescription,
       
       // Header data and methods
       mobileMenuOpen,

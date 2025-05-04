@@ -17,7 +17,7 @@ class ShippingFormResource extends Resource
 {
     protected static ?string $model = ShippingForm::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-truck';
 
     protected static ?string $navigationGroup = 'Shop Management';
 

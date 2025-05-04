@@ -28,7 +28,10 @@
     <!-- Category Title -->
     <div class="flex flex-col md:flex-row justify-between items-center mb-8 bg-white p-6 rounded-lg shadow-sm border-l-4 border-blue-500">
       <div class="flex items-center">
-        <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mr-4 animate-pulse">
+        <div v-if="category && category.image_url" class="h-12 w-12 rounded-full overflow-hidden mr-4">
+          <img :src="getImageUrl(category.image_url)" :alt="categoryName" class="h-full w-full object-cover">
+        </div>
+        <div v-else class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mr-4 animate-pulse">
           <span class="text-blue-600 font-bold text-xl">{{ categoryName.charAt(0) }}</span>
         </div>
         <div>
@@ -36,7 +39,7 @@
             {{ categoryName }}
             <span v-if="categoryId === 1" class="ml-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Official Collection</span>
           </h1>
-          <p class="text-gray-600 mt-1">Browse our collection of quality products</p>
+          <p class="text-gray-600 mt-1">{{ category && category.description ? category.description : 'Browse our collection of quality products' }}</p>
         </div>
       </div>
       
@@ -63,7 +66,7 @@
     </div>
     
     <!-- Subcategories Section -->
-    <div v-else-if="subcategories.length > 0" class="mb-8">
+    <div v-if="subcategories.length > 0" class="mb-8">
       <h2 class="text-xl font-bold mb-4">Subcategories</h2>
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         <div 
@@ -125,6 +128,14 @@
         title="No Products Found"
         message="There are no products in this category."
       />
+    </div>
+    
+    <!-- Add this before the main gallery -->
+    <div v-if="isDevelopment" class="bg-gray-100 p-4 mb-4 rounded">
+      <h3 class="font-bold">Debug Info:</h3>
+      <pre>Has additional images: {{ hasAdditionalImages }}</pre>
+      <pre>Current image: {{ currentImage }}</pre>
+      <pre>Additional images: {{ JSON.stringify(productAdditionalImages, null, 2) }}</pre>
     </div>
     
     <!-- Product Grid -->
@@ -247,6 +258,10 @@ export default {
       wishlistDropdownOpen: false,
       cartItemsLocal: [], // Local reactive cart items
       wishlistItemsLocal: [], // Local reactive wishlist items
+      isDevelopment: false,
+      hasAdditionalImages: false,
+      currentImage: '',
+      productAdditionalImages: [],
     };
   },
   created() {
@@ -424,18 +439,21 @@ export default {
       this.$router.push(`/category/${subcategoryId}`);
     },
     
-    getImageUrl(imageUrl) {
-      if (!imageUrl) {
-        return '/img/placeholder.jpg';
-      }
+    getImageUrl(imagePath) {
+      if (!imagePath) return '';
       
       // If the path is a full URL, return it directly
-      if (imageUrl.startsWith('http')) {
-        return imageUrl;
+      if (imagePath.startsWith('http')) {
+        return imagePath;
       }
       
-      // Otherwise, construct a path to the image on the server
-      return `/storage/${imageUrl}`;
+      // Handle paths that might already have "storage/" in them
+      if (imagePath.startsWith('storage/')) {
+        return `http://localhost:8000/${imagePath}`;
+      }
+      
+      // Otherwise, assume it's a relative path on the server
+      return `http://localhost:8000/storage/${imagePath}`;
     },
     
     addToCart(product) {

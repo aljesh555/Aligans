@@ -18,6 +18,20 @@ export const addToCart = (product, quantity = 1, size = null, color = null) => {
     // Get product stock
     const productStock = product.stock || 0;
     
+    // Validate stock - can't add if no stock
+    if (productStock <= 0) {
+      return {
+        success: false,
+        cart: cart,
+        message: 'Cannot add product to cart. Product is out of stock.'
+      };
+    }
+    
+    // Enforce minimum quantity of 1
+    if (quantity < 1) {
+      quantity = 1;
+    }
+    
     // Find if the product is already in cart with the same options
     const existingItemIndex = cart.findIndex(item => 
       item.id === product.id && 
@@ -49,7 +63,7 @@ export const addToCart = (product, quantity = 1, size = null, color = null) => {
       cart.push({
         id: product.id,
         name: product.name,
-        price: product.price,
+        price: product.on_sale && product.discount_price ? product.discount_price : product.price,
         image: product.image || product.thumbnail,
         quantity: quantity,
         size: size,
@@ -215,6 +229,20 @@ export const buyNow = (product, quantity = 1, size = null, color = null) => {
     // Get product stock
     const productStock = product.stock || 0;
     
+    // Validate stock - can't buy if no stock
+    if (productStock <= 0) {
+      return {
+        success: false,
+        cart: [],
+        message: 'Cannot purchase product. Product is out of stock.'
+      };
+    }
+    
+    // Enforce minimum quantity of 1
+    if (quantity < 1) {
+      quantity = 1;
+    }
+    
     // Validate against available stock
     if (quantity > productStock) {
       return {
@@ -231,7 +259,7 @@ export const buyNow = (product, quantity = 1, size = null, color = null) => {
     const cart = [{
       id: product.id,
       name: product.name,
-      price: product.price,
+      price: product.on_sale && product.discount_price ? product.discount_price : product.price,
       image: product.image || product.thumbnail,
       quantity: quantity,
       size: size,

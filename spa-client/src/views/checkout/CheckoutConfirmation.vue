@@ -176,13 +176,13 @@
                             </div>
                           </td>
                           <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
-                            ${{ item.price.toFixed(2) }}
+                            Rs. {{ item.price.toFixed(2) }}
                           </td>
                           <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
                             {{ item.quantity }}
                           </td>
                           <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            ${{ (item.price * item.quantity).toFixed(2) }}
+                            Rs. {{ (item.price * item.quantity).toFixed(2) }}
                           </td>
                         </tr>
                       </tbody>
@@ -193,22 +193,22 @@
                   <div class="border-t border-gray-200 px-6 py-4">
                     <div class="flex justify-between text-sm mb-2">
                       <span class="text-gray-600">Subtotal</span>
-                      <span class="font-medium">${{ order.subtotal.toFixed(2) }}</span>
+                      <span class="font-medium">Rs. {{ order.subtotal.toFixed(2) }}</span>
                     </div>
                     
                     <div class="flex justify-between text-sm mb-2">
                       <span class="text-gray-600">Shipping</span>
-                      <span class="font-medium">{{ order.shipping > 0 ? '$' + order.shipping.toFixed(2) : 'Free' }}</span>
+                      <span class="font-medium">{{ order.shipping > 0 ? 'Rs. ' + order.shipping.toFixed(2) : 'Free' }}</span>
                     </div>
                     
                     <div class="flex justify-between text-sm mb-2">
                       <span class="text-gray-600">Tax</span>
-                      <span class="font-medium">${{ order.tax.toFixed(2) }}</span>
+                      <span class="font-medium">Rs. {{ order.tax.toFixed(2) }}</span>
                     </div>
                     
                     <div class="flex justify-between font-bold text-lg border-t border-gray-200 pt-4 mt-2">
                       <span>Total</span>
-                      <span>${{ order.total.toFixed(2) }}</span>
+                      <span>Rs. {{ order.total.toFixed(2) }}</span>
                     </div>
                   </div>
                 </div>

@@ -192,9 +192,13 @@ class CheckoutController extends Controller
             // Create simplified payment details
             $paymentDetail = new PaymentDetail();
             $paymentDetail->order_id = $order->id;
-            $paymentDetail->payment_gateway = $request->payment_method;
+            $paymentDetail->payment_method = $request->payment_method;
             $paymentDetail->amount = $order->total_amount;
-            $paymentDetail->payment_status = 'unpaid';
+            $paymentDetail->status = 'pending';
+            
+            // Generate a transaction ID for all payment methods (even COD)
+            $paymentDetail->transaction_id = 'TXN' . strtoupper($request->payment_method) . time() . rand(1000, 9999);
+            
             $paymentDetail->save();
             
             DB::commit();
@@ -255,7 +259,7 @@ class CheckoutController extends Controller
             // Get payment detail
             $paymentDetail = PaymentDetail::where('order_id', $order->id)
                 ->where('payment_method', 'esewa')
-                ->where('status', PaymentDetail::STATUS_UNPAID)
+                ->where('status', 'pending')
                 ->first();
                 
             if (!$paymentDetail) {

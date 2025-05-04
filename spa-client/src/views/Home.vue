@@ -175,11 +175,11 @@
           </div>
         </section>
 
+        <!-- Shop By Brand Section -->
+        <ShopByBrandSection />
+
         <!-- Featured Products -->
         <FeaturedProductsSection />
-
-        <!-- Testimonials Section -->
-        <TestimonialsSection />
       </div>
     </section>
 
@@ -198,8 +198,8 @@ import Header from '@/components/Header.vue';
 import Hero from '@/components/Hero.vue';
 import CategorySlider from '@/components/home/CategorySlider.vue';
 import FeaturedProductsSection from '@/components/home/FeaturedProductsSection.vue'
-import TestimonialsSection from '@/components/home/TestimonialsSection.vue'
 import Footer from '@/components/layout/Footer.vue';
+import ShopByBrandSection from '@/components/home/ShopByBrandSection.vue';
 
 export default {
   name: 'HomeView',
@@ -209,8 +209,8 @@ export default {
     Hero,
     CategorySlider,
     FeaturedProductsSection,
-    TestimonialsSection,
-    Footer
+    Footer,
+    ShopByBrandSection
   },
   data() {
     return {

@@ -7,17 +7,9 @@
         <div class="lg:col-span-2">
           <div class="flex items-center gap-2 mb-6">
             <!-- Dynamic Logo from API -->
-            <div v-if="logoData && logoData.base64_image" class="flex items-center">
+            <div v-if="logoData && logoData.image_url" class="flex items-center">
               <img 
-                :src="logoData.base64_image" 
-                alt="Aligans Logo" 
-                class="h-10 w-auto" 
-                @error="handleLogoError"
-              />
-            </div>
-            <div v-else-if="logoData && logoData.image_path" class="flex items-center">
-              <img 
-                :src="getLogoImageUrl(logoData)" 
+                :src="logoData.image_url" 
                 alt="Aligans Logo" 
                 class="h-10 w-auto" 
                 @error="handleLogoError"
@@ -119,36 +111,41 @@
         <div>
           <h3 class="text-white font-semibold text-lg mb-4">Quick Shop</h3>
           <ul class="space-y-3">
-            <li><router-link to="/products" class="hover:text-blue-400 transition">All Products</router-link></li>
-            <li><router-link to="/category/equipment" class="hover:text-blue-400 transition">Equipment</router-link></li>
-            <li><router-link to="/category/apparel" class="hover:text-blue-400 transition">Apparel</router-link></li>
-            <li><router-link to="/category/footwear" class="hover:text-blue-400 transition">Footwear</router-link></li>
-            <li><router-link to="/teams" class="hover:text-blue-400 transition">Team Store</router-link></li>
+            <!-- Loading state -->
+            <li v-if="categoriesLoading" v-for="i in 4" :key="i" class="h-5 bg-gray-700 rounded animate-pulse w-3/4 mb-3"></li>
+            
+            <!-- Show All Products link always -->
+            <li v-else><router-link to="/products" class="hover:text-blue-400 transition">All Products</router-link></li>
+            
+            <!-- Show top categories dynamically -->
+            <li v-for="category in topCategories" :key="category.id">
+              <router-link :to="'/category/' + category.id" class="hover:text-blue-400 transition">
+                {{ category.name }}
+              </router-link>
+            </li>
           </ul>
         </div>
         
-        <!-- Contact Info -->
+        <!-- Customer Care Info -->
         <div>
           <h3 class="text-white font-semibold text-lg mb-4">CUSTOMER CARE</h3>
           <ul class="space-y-3">
             <!-- Loading state -->
-            <template v-if="customerCareLoading">
-              <li v-for="i in 5" :key="i" class="h-5 bg-gray-700 rounded animate-pulse w-3/4 mb-3"></li>
-            </template>
+            <li v-if="customerCareLoading" v-for="i in 3" :key="i" class="h-5 bg-gray-700 rounded animate-pulse w-3/4 mb-3"></li>
             
-            <!-- Error state - no data found -->
-            <template v-else-if="!customerCare">
-              <li class="text-red-400">Customer care information unavailable</li>
-            </template>
+            <!-- Debug info - remove in production -->
+            <li v-else-if="!customerCare" class="text-red-400">
+              No customer care data available
+            </li>
             
             <!-- Data loaded successfully -->
             <template v-else>
-              <!-- Working Hours -->
+              <!-- Working Hours - Day and Time combined -->
               <li v-if="customerCare.timings" class="flex items-center gap-3">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>Working Hours: {{ customerCare.timings }}</span>
+                <span>{{ customerCare.timings }}</span>
               </li>
               
               <!-- Phone -->
@@ -158,28 +155,6 @@
                 </svg>
                 <a :href="'tel:' + customerCare.phone" class="hover:text-blue-400 transition">
                   {{ customerCare.phone }}
-                </a>
-              </li>
-              
-              <!-- WhatsApp -->
-              <li v-if="customerCare.whatsapp" class="flex items-center gap-3">
-                <svg class="h-5 w-5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                </svg>
-                <a :href="'https://wa.me/' + customerCare.whatsapp" target="_blank" class="hover:text-blue-400 transition">
-                  {{ customerCare.whatsapp }}
-                </a>
-              </li>
-              
-              <!-- Viber -->
-              <li v-if="customerCare.viber" class="flex items-center gap-3">
-                <svg class="h-5 w-5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M11.995 0C5.698 0 .523 4.656.523 10.76c0 2.283.85 4.265 2.435 5.732a.88.88 0 0 1 .315.712l-.17 2.068c-.061.699.42 1.15 1.074.998l2.254-.61a.789.789 0 0 1 .373.009c1.567.356 2.52.556 4.825.556 7.247-.041 11.462-4.615 11.462-10.14C23.016 4.983 19.075 0 11.995 0zm.525 17.433c-.52-.01-1.036-.032-1.536-.112l-.557-.118-2.147.573.157-1.874-.178-.28c-1.089-1.722-1.429-3.787-1.365-5.865.146-4.717 3.661-7.933 8.071-7.816 4.322.115 7.524 3.384 7.67 7.465.155 4.305-3.479 8.027-8.115 8.027zm.477-12.958a.559.559 0
-                0-1-.569-.55.559.559 0 0 0-.565.55c0 .294.256.534.572.534.312 0 .562-.247.534-.535zm3.737.847a.582.582 0 0 0-.522-.591.557.557 0 0 0-.571.58c.007.301.27.536.571.529a.566.566 0 0 0 .522-.518zm-7.667-.536c-1.475 1.761-1.463 4.11-.112
-                5.847.199.255.355.29.585.108.178-.166.674-.667.674-.667.261-.279.262-.603-.009-.868 0 0-.505-.595-.575-.676-.247-.283-.499-.242-.738-.048-.19.183-.23.196-.316.252-.188.125-.13.387-.13.387.381 1.215 1.352 1.902 2.006 2.168.186.07.401.125.531-.01.182-.138.288-.299.379-.509.125-.289-.015-.52-.28-.704 0 0-.344-.27-.514-.389-.285-.207-.609-.204-.764.106l-.14.233c-.247.266-.539.153-.539.153-1.162-.654-.945-1.723-.945-1.723.053-.17.125-.287.49-.387l.214-.079c.293-.14.293-.438.04-.733 0 0-.21-.254-.507-.55-.278-.276-.502-.212-.783-.094-.22.092-.326.15-.326.15v.003zm5.055.522c.163-.007.336.061.47.19.14.134.15.38.158.536.048 1.097-.35 2.623-2.125 3.335-.774.312-1.569.243-2.317-.079a9.424 9.424 0 0 1-1.208-.75c-.07-.05-.146-.08-.223-.08-.145 0-.288.086-.384.261-.103.191-.178.42-.168.646.01.204.114.368.253.473.143.107.291.21.443.307 1.674 1.046 3.49 1.389 5.322.757 2.29-.791 3.632-3.045 3.38-5.472-.03-.272-.094-.536-.235-.75-.134-.204-.343-.349-.58-.364-.23-.014-.486-.007-.736-.007-.296 0-.509.145-.615.423-.39.103-.236.661-.076 1.18.122.388-.207.533-.505.293 0 0-1.763-1.476-1.763-1.516-.101-.127-.079-.254.059-.28l.85-.098z"/>
-                </svg>
-                <a :href="'viber://chat?number=' + customerCare.viber" target="_blank" class="hover:text-blue-400 transition">
-                  {{ customerCare.viber }}
                 </a>
               </li>
               
@@ -193,7 +168,7 @@
                 </a>
               </li>
               
-              <!-- Address -->
+              <!-- Address (if available) -->
               <li v-if="customerCare.address" class="flex items-start gap-3">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -253,6 +228,7 @@
 
 <script>
 import axios from 'axios';
+import { API_URL } from '@/services/config';
 
 export default {
   name: 'Footer',
@@ -275,7 +251,9 @@ export default {
       footerCopyright: '',
       copyright: `© ${new Date().getFullYear()} Aligans. All rights reserved.`,
       customerCare: null,
-      customerCareLoading: true
+      customerCareLoading: true,
+      categoriesLoading: true,
+      topCategories: []
     };
   },
   async created() {
@@ -283,7 +261,8 @@ export default {
       this.fetchSocialMediaLinks(),
       this.fetchLogo(),
       this.fetchFooterMessage(),
-      this.fetchCustomerCare()
+      this.fetchCustomerCare(),
+      this.fetchTopCategories()
     ]);
   },
   methods: {
@@ -291,44 +270,113 @@ export default {
       this.socialMediaLoading = true;
       
       try {
-        // Try to fetch social_links from settings using getSocialLinks endpoint
-        const response = await axios.get('http://localhost:8000/api/settings/social-links');
+        // Use the social-links API endpoint to fetch data
+        const response = await axios.get(`${API_URL}/settings/social-links`);
         console.log('Social media response:', response.data);
         
-        if (response.data && response.data.value) {
-          try {
-            // Parse the JSON value
-            let socialData;
+        if (response.data && response.data.success && response.data.data) {
+          // The API returns data in format { data: { social_links: [...] } }
+          if (response.data.data.social_links) {
+            let socialLinksData = response.data.data.social_links;
             
-            // Handle the case where the data is already an object
-            if (typeof response.data.value === 'object') {
-              socialData = response.data.value;
+            // Handle repeater format as array of key-value pairs
+            // [{"key":"Facebook","value":"facebook.com"}, {"key":"Instagram","value":"https://www.instagram.com/"}, ...]
+            if (Array.isArray(socialLinksData)) {
+              // Map the repeater format to our expected object structure
+              const mappedData = {};
+              
+              socialLinksData.forEach(item => {
+                if (item.key.toLowerCase() === 'facebook') mappedData.facebook = this.ensureHttpPrefix(item.value);
+                if (item.key.toLowerCase() === 'instagram') mappedData.instagram = this.ensureHttpPrefix(item.value);
+                if (item.key.toLowerCase() === 'twitter') mappedData.twitter = this.ensureHttpPrefix(item.value);
+                if (item.key.toLowerCase() === 'tiktok') mappedData.tiktok = this.ensureHttpPrefix(item.value);
+                if (item.key.toLowerCase() === 'yutube' || item.key.toLowerCase() === 'youtube') mappedData.youtube = this.ensureHttpPrefix(item.value);
+                if (item.key.toLowerCase() === 'linkedin') mappedData.linkedin = this.ensureHttpPrefix(item.value);
+              });
+              
+              this.socialLinks = mappedData;
+              console.log('Social links set from repeater format:', this.socialLinks);
             } 
-            // Handle the case where it's a JSON string
-            else if (typeof response.data.value === 'string') {
-              socialData = JSON.parse(response.data.value);
+            // If it's already in the expected object format, just use it
+            else if (typeof socialLinksData === 'object' && !Array.isArray(socialLinksData)) {
+              // Ensure all URLs have http/https prefix
+              const mappedData = {};
+              Object.keys(socialLinksData).forEach(key => {
+                mappedData[key] = this.ensureHttpPrefix(socialLinksData[key]);
+              });
+              this.socialLinks = mappedData;
+              console.log('Social links set from object format:', this.socialLinks);
             }
-            
-            // Update social links with fetched data
-            if (socialData) {
-              this.socialLinks = {
-                facebook: socialData.facebook || '',
-                instagram: socialData.instagram || '',
-                twitter: socialData.twitter || '',
-                linkedin: socialData.linkedin || '',
-                youtube: socialData.youtube || '',
-                tiktok: socialData.tiktok || ''
-              };
+            // If it's a JSON string, parse it
+            else if (typeof socialLinksData === 'string') {
+              try {
+                const parsed = JSON.parse(socialLinksData);
+                
+                // Check if parsed result is in repeater format
+                if (Array.isArray(parsed)) {
+                  const mappedData = {};
+                  
+                  parsed.forEach(item => {
+                    if (item.key.toLowerCase() === 'facebook') mappedData.facebook = this.ensureHttpPrefix(item.value);
+                    if (item.key.toLowerCase() === 'instagram') mappedData.instagram = this.ensureHttpPrefix(item.value);
+                    if (item.key.toLowerCase() === 'twitter') mappedData.twitter = this.ensureHttpPrefix(item.value);
+                    if (item.key.toLowerCase() === 'tiktok') mappedData.tiktok = this.ensureHttpPrefix(item.value);
+                    if (item.key.toLowerCase() === 'yutube' || item.key.toLowerCase() === 'youtube') mappedData.youtube = this.ensureHttpPrefix(item.value);
+                    if (item.key.toLowerCase() === 'linkedin') mappedData.linkedin = this.ensureHttpPrefix(item.value);
+                  });
+                  
+                  this.socialLinks = mappedData;
+                } else {
+                  // Ensure all URLs have http/https prefix
+                  const mappedData = {};
+                  Object.keys(parsed).forEach(key => {
+                    mappedData[key] = this.ensureHttpPrefix(parsed[key]);
+                  });
+                  this.socialLinks = mappedData;
+                }
+              } catch (e) {
+                console.error('Error parsing social links data:', e);
+                this.setDefaultSocialLinks();
+              }
             }
-            
-            console.log('Social links set:', this.socialLinks);
-          } catch (e) {
-            console.error('Error parsing social links:', e);
-            // Fallback to default social links
+          } else {
+            console.log('No social_links object in the API response');
             this.setDefaultSocialLinks();
           }
         } else {
-          this.setDefaultSocialLinks();
+          // Try the old format for backward compatibility
+          if (response.data && response.data.value) {
+            try {
+              // Parse the JSON value
+              let socialData;
+              
+              // Handle the case where the data is already an object
+              if (typeof response.data.value === 'object') {
+                socialData = response.data.value;
+              } 
+              // Handle the case where it's a JSON string
+              else if (typeof response.data.value === 'string') {
+                socialData = JSON.parse(response.data.value);
+              }
+              
+              // Update social links with fetched data
+              if (socialData) {
+                const mappedData = {};
+                Object.keys(socialData).forEach(key => {
+                  mappedData[key] = this.ensureHttpPrefix(socialData[key]);
+                });
+                this.socialLinks = mappedData;
+              }
+              
+              console.log('Social links set from old format:', this.socialLinks);
+            } catch (e) {
+              console.error('Error parsing social links:', e);
+              this.setDefaultSocialLinks();
+            }
+          } else {
+            console.log('Invalid API response or missing data');
+            this.setDefaultSocialLinks();
+          }
         }
       } catch (error) {
         console.error('Error fetching social media links:', error);
@@ -336,6 +384,17 @@ export default {
       } finally {
         this.socialMediaLoading = false;
       }
+    },
+    
+    // Helper method to ensure URLs have http/https prefix
+    ensureHttpPrefix(url) {
+      if (!url) return '';
+      
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+      }
+      
+      return 'https://' + url;
     },
     
     // Set default social links
@@ -354,17 +413,16 @@ export default {
     async fetchLogo() {
       this.logoLoading = true;
       try {
-        // Add a timestamp to prevent caching
-        const timestamp = new Date().getTime();
-        const response = await axios.get(`http://localhost:8000/api/logo/active?t=${timestamp}`);
+        // Use the settings/logo endpoint instead of logo/active
+        const response = await axios.get(`${API_URL}/settings/logo`);
         if (response.data) {
           this.logoData = response.data;
-          console.log('Logo data loaded:', this.logoData);
+          console.log('Logo data loaded from settings:', this.logoData);
         } else {
           this.logoData = null;
         }
       } catch (error) {
-        console.error('Error fetching logo:', error);
+        console.error('Error fetching logo from settings:', error);
         this.logoData = null; // Reset logo data on error
       } finally {
         this.logoLoading = false;
@@ -376,32 +434,49 @@ export default {
       this.messageLoading = true;
       
       try {
-        // Simplified approach - hardcode the message value from the database
-        // This is the most reliable approach since we know the exact value
-        this.footerMessage = "This is about ecommerce";
+        // First try our direct endpoint that always returns the correct value
+        const directResponse = await axios.get(`${API_URL}/footer-about-text`);
+        console.log('Direct API response:', directResponse.data);
         
-        // Also try to fetch from API to get updates
-        const response = await axios.get('http://localhost:8000/api/settings/14');
-        console.log('API response:', response.data);
+        if (directResponse.data && directResponse.data.success) {
+          this.footerMessage = directResponse.data.data;
+          console.log('Footer message set from direct endpoint:', this.footerMessage);
+          this.messageLoading = false;
+          return;
+        }
+      } catch (directError) {
+        console.error('Error with direct endpoint:', directError);
+        // Continue to next approach if this fails
+      }
+      
+      try {
+        // Try getting by key
+        const response = await axios.get(`${API_URL}/settings/by-key/footer_about_text`);
+        console.log('Footer text API response:', response.data);
         
-        if (response.data && response.data.value) {
-          // If value is a JSON string (has quotes around it)
-          if (typeof response.data.value === 'string' && response.data.value.startsWith('"') && response.data.value.endsWith('"')) {
+        if (response.data && response.data.success) {
+          // Get the data field
+          let value = response.data.data;
+          
+          // If it's a string that looks like another JSON string, parse it again
+          if (typeof value === 'string' && value.startsWith('"') && value.endsWith('"')) {
             try {
-              this.footerMessage = JSON.parse(response.data.value);
-              console.log('Parsed JSON value:', this.footerMessage);
+              value = JSON.parse(value);
             } catch (e) {
-              this.footerMessage = response.data.value.replace(/^"|"$/g, '');
-              console.log('Stripped quotes:', this.footerMessage);
+              // If parsing fails, strip the quotes manually
+              value = value.substring(1, value.length - 1);
             }
-          } else {
-            // Use value directly
-            this.footerMessage = response.data.value;
-            console.log('Direct value:', this.footerMessage);
           }
+          
+          this.footerMessage = value;
+          console.log('Footer message set from by-key endpoint:', this.footerMessage);
         }
       } catch (error) {
-        console.error('Error fetching from API:', error);
+        console.error('Error fetching by key:', error);
+        
+        // If all else fails, use the hardcoded value
+        this.footerMessage = "This is Aljesh Raut";
+        console.log('Using hardcoded fallback value:', this.footerMessage);
       } finally {
         this.messageLoading = false;
       }
@@ -419,13 +494,16 @@ export default {
         return `${logo.image_path}?t=${timestamp}`;
       }
       
+      // Use the API_URL for constructing storage URLs
+      const baseUrl = API_URL.split('/api')[0]; // Get the base URL without '/api'
+      
       // Check if it's a storage URL
       if (logo.image_path.includes('storage/')) {
-        return `http://localhost:8000/${logo.image_path.startsWith('/') ? logo.image_path.substring(1) : logo.image_path}?t=${timestamp}`;
+        return `${baseUrl}/${logo.image_path.startsWith('/') ? logo.image_path.substring(1) : logo.image_path}?t=${timestamp}`;
       }
       
       // Default: assume it's a storage path
-      return `http://localhost:8000/storage/${logo.image_path.startsWith('/') ? logo.image_path.substring(1) : logo.image_path}?t=${timestamp}`;
+      return `${baseUrl}/storage/${logo.image_path.startsWith('/') ? logo.image_path.substring(1) : logo.image_path}?t=${timestamp}`;
     },
     
     // Handle logo loading errors
@@ -434,43 +512,162 @@ export default {
       event.target.style.display = 'none';
     },
     
-    // Simplified customer care fetch method
+    // Method to fetch customer care data from settings
     async fetchCustomerCare() {
       console.log('Fetching customer care data from API');
       this.customerCareLoading = true;
       
       try {
-        // Use the correct API endpoint to get customer care data
-        const response = await axios.get('http://localhost:8000/api/settings/customer-care');
+        // Use the customer-care API endpoint to fetch data
+        const response = await axios.get(`${API_URL}/settings/customer-care`);
         console.log('Customer care API response:', response.data);
         
-        if (response.data && response.data.success && response.data.data && response.data.data.customer_care) {
-          this.customerCare = response.data.data.customer_care;
-          console.log('Customer care data set from API:', this.customerCare);
+        // Debug the exact structure received
+        if (response.data && response.data.data && response.data.data.customer_care) {
+          console.log('Raw customer_care data:', JSON.stringify(response.data.data.customer_care));
+        }
+        
+        if (response.data && response.data.success && response.data.data) {
+          // The API returns data in format { data: { customer_care: [...] } }
+          if (response.data.data.customer_care) {
+            let customerCareData = response.data.data.customer_care;
+            
+            // Initialize an empty customer care object
+            const mappedData = {
+              timings: '',
+              phone: '',
+              email: '',
+              address: ''
+            };
+            
+            // Variables to store day and time separately
+            let day = '';
+            let time = '';
+            
+            // Parse if string (important step)
+            if (typeof customerCareData === 'string') {
+              try {
+                console.log('Parsing customer_care string data');
+                customerCareData = JSON.parse(customerCareData);
+                console.log('Parsed successfully:', customerCareData);
+              } catch (e) {
+                console.error('Failed to parse customer_care JSON string:', e);
+              }
+            }
+            
+            // Process the data based on its format
+            if (Array.isArray(customerCareData)) {
+              console.log('Processing array format with', customerCareData.length, 'items');
+              
+              // Process repeater format (array of key-value pairs)
+              for (const item of customerCareData) {
+                console.log('Processing item:', item);
+                
+                // Extract key and value using appropriate properties
+                // Support both uppercase and lowercase property names
+                const key = (item.Key || item.key || '').toLowerCase();
+                const value = item.Value || item.value || '';
+                
+                console.log(`Found key: "${key}", value: "${value}"`);
+                
+                // Map keys based on lowercase name
+                switch (key) {
+                  case 'day':
+                    day = value;
+                    console.log('Set day to', day);
+                    break;
+                  case 'time':
+                    time = value;
+                    console.log('Set time to', time);
+                    break;
+                  case 'contact':
+                    mappedData.phone = value;
+                    console.log('Set phone to', value);
+                    break;
+                  case 'email':
+                    mappedData.email = value;
+                    console.log('Set email to', value);
+                    break;
+                  case 'address':
+                    mappedData.address = value;
+                    console.log('Set address to', value);
+                    break;
+                }
+              }
+              
+              // Combine day and time if both are available
+              if (day && time) {
+                mappedData.timings = `${day}: ${time}`;
+              } else if (day) {
+                mappedData.timings = day;
+              } else if (time) {
+                mappedData.timings = time;
+              }
+              
+              console.log('Final mapped data:', mappedData);
+                  this.customerCare = mappedData;
+            } 
+            // Handle object format directly
+            else if (typeof customerCareData === 'object') {
+              this.customerCare = {
+                timings: customerCareData.timings || '',
+                phone: customerCareData.phone || customerCareData.contact || '',
+                email: customerCareData.email || '',
+                address: customerCareData.address || ''
+              };
+            }
+            
+            console.log('Final customer care data:', this.customerCare);
+          } else {
+            console.log('No customer_care object in the API response');
+            this.setDefaultCustomerCare();
+          }
         } else {
-          console.log('No valid customer care data in response, using fallback');
-          this.customerCare = {
-            timings: '10AM to 10PM',
-            whatsapp: '9819963606',
-            email: 'care@yourstore.com',
-            address: 'santingar,Baneshwor',
-            phone: '+977-1-4444444',
-            viber: '+977-9800000000'
-          };
+          console.log('Invalid API response or missing data');
+          this.setDefaultCustomerCare();
         }
       } catch (error) {
         console.error('Error fetching customer care data:', error);
-        // Use fallback data if API fails
-        this.customerCare = {
-          timings: '10AM to 10PM',
-          whatsapp: '9819963606',
-          email: 'care@yourstore.com',
-          address: 'santingar,Baneshwor',
-          phone: '+977-1-4444444',
-          viber: '+977-9800000000'
-        };
+        this.setDefaultCustomerCare();
       } finally {
         this.customerCareLoading = false;
+      }
+    },
+    
+    // Set default customer care data as fallback
+    setDefaultCustomerCare() {
+      this.customerCare = {
+        timings: '10AM to 10PM',
+        email: 'care@yourstore.com',
+        address: 'santingar,Baneshwor',
+        phone: '+977-1-4444444'
+      };
+    },
+
+    async fetchTopCategories() {
+      this.categoriesLoading = true;
+      
+      try {
+        // Use the categories API endpoint to fetch data
+        const response = await axios.get(`${API_URL}/categories`);
+        console.log('Categories response:', response.data);
+        
+        if (response.data && response.data.data) {
+          // Filter top-level categories (parent_id is null or 0)
+          this.topCategories = response.data.data
+            .filter(cat => !cat.parent_id)
+            .slice(0, 5); // Limit to 5 categories for the footer
+          
+          console.log('Top categories loaded:', this.topCategories);
+        } else {
+          console.log('No categories data found');
+          this.topCategories = [];
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        this.topCategories = [];
+      } finally {
+        this.categoriesLoading = false;
       }
     }
   }

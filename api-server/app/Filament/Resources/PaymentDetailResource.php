@@ -17,7 +17,7 @@ class PaymentDetailResource extends Resource
 {
     protected static ?string $model = PaymentDetail::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-credit-card';
 
     protected static ?string $navigationGroup = 'Shop Management';
 

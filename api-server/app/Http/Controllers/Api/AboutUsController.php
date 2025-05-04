@@ -3,31 +3,43 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\AboutUs;
+use App\Models\StaticPage;
 use Illuminate\Http\Request;
 
 class AboutUsController extends Controller
 {
     /**
-     * Get the active About Us content.
+     * Get the About Us content from static pages.
      *
      * @return \Illuminate\Http\JsonResponse
      */
     public function index()
     {
-        $aboutUs = AboutUs::getActive();
+        try {
+            $aboutUs = StaticPage::where('slug', 'about-us')
+                ->where('is_active', true)
+                ->first();
 
-        if (!$aboutUs) {
+            if (!$aboutUs) {
+                return response()->json([
+                    'success' => false,
+                    'title' => 'About Us',
+                    'content' => '<p>Welcome to Aligans. We are committed to providing high-quality sports equipment and apparel.</p>',
+                    'message' => 'About Us content not found'
+                ], 404);
+            }
+
             return response()->json([
-                'title' => 'About Us',
-                'content' => '<p>Welcome to Aligans. We are committed to providing high-quality sports equipment and apparel.</p>',
-                'mission' => 'Our mission is to provide quality sports equipment for athletes of all levels.',
-                'vision' => 'To be the leading provider of sports equipment in our region.',
-                'values' => 'Quality, Customer Satisfaction, Integrity',
-                'team' => []
+                'success' => true,
+                'data' => $aboutUs
             ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching About Us content: ' . $e->getMessage(),
+                'title' => 'About Us',
+                'content' => '<p>Welcome to Aligans. We are committed to providing high-quality sports equipment and apparel.</p>'
+            ], 500);
         }
-
-        return response()->json($aboutUs);
     }
 } 

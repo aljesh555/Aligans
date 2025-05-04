@@ -236,6 +236,24 @@ const publicRoutes = [
     name: 'Faq',
     component: Faq
   },
+  {
+    path: '/brands',
+    name: 'BrandsPage',
+    component: () => import('../views/brands/BrandsPage.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Shop By Brand'
+    }
+  },
+  {
+    path: '/brands/:slug',
+    name: 'BrandProducts',
+    component: () => import('../views/brands/BrandProducts.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Brand Products'
+    }
+  },
   // 404 route
   {
     path: '/:pathMatch(.*)*',

@@ -70,10 +70,18 @@ export default {
     async fetchShippingPolicy() {
       this.loading = true;
       try {
-        const response = await axios.get(`${this.apiBaseUrl}/api/shipping-policy`);
+        // Fetch shipping policy from static_pages table
+        const response = await axios.get(`${this.apiBaseUrl}/api/static-pages/shipping-policy`);
         
         if (response.data && response.data.success && response.data.data) {
-          this.shippingPolicies = response.data.data;
+          // Convert single policy object into array to maintain compatibility with existing template
+          const policyData = response.data.data;
+          this.shippingPolicies = [{
+            title: policyData.title || 'Shipping Policy',
+            content: policyData.content,
+            updated_at: policyData.updated_at
+          }];
+          
           console.log('Shipping policy loaded successfully', this.shippingPolicies);
         } else {
           throw new Error('Invalid response format');

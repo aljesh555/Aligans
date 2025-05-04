@@ -29,6 +29,9 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // $schedule->command('inspire')->hourly();
+        
+        // Check for expired sales every hour
+        $schedule->command('sales:handle-expired')->hourly();
     }
 
     /**

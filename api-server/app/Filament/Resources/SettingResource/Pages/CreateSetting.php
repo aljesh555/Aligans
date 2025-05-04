@@ -13,23 +13,28 @@ class CreateSetting extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         if($data['type'] === 'repeater') {
-            $data['value'] = $data['repeaterValue'];
+            $data['value'] = json_encode($data['repeaterValue']);
             unset($data['repeaterValue']);
         }
-        if($data['type'] === 'image') {
-            $data['value'] = $data['fileValue'];
+        elseif($data['type'] === 'image') {
+            $data['value'] = json_encode($data['fileValue']);
             unset($data['fileValue']);
         }
-        if($data['type'] === 'file') {
-            $data['value'] = $data['fileValue'];
+        elseif($data['type'] === 'file') {
+            $data['value'] = json_encode($data['fileValue']);
             unset($data['fileValue']);
         }
-        if($data['type'] === 'string') {
-            $data['value'] = $data['stringValue'];
+        elseif($data['type'] === 'string') {
+            $data['value'] = json_encode($data['stringValue']);
             unset($data['stringValue']);
         }
 
-        dd($data);
+        // Remove tabs or whitespace from key and description
+        $data['key'] = trim($data['key']);
+        if (isset($data['description'])) {
+            $data['description'] = trim($data['description']);
+        }
+        
         return $data;
     }
 }

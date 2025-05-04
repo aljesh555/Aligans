@@ -6,25 +6,46 @@
         <p class="text-gray-600 max-w-xl mx-auto">Explore our wide range of product categories designed to meet all your sporting needs</p>
       </div>
       
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <!-- Loading state -->
+      <div v-if="loading" class="flex justify-center items-center py-12">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+      
+      <!-- Error state -->
+      <div v-else-if="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        {{ error }}
+        <button @click="fetchCategories" class="ml-3 bg-red-200 px-3 py-1 rounded hover:bg-red-300">
+          Retry
+        </button>
+      </div>
+      
+      <!-- Categories grid -->
+      <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         <div
-          v-for="(category, index) in categories"
-          :key="index"
+          v-for="category in categories"
+          :key="category.id"
           class="category-card group relative rounded-lg overflow-hidden bg-white shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
         >
           <router-link :to="`/category/${category.id}`">
             <div class="relative h-48 overflow-hidden">
+              <!-- Display category image if available -->
               <img
-                :src="category.image"
+                v-if="category.image_url"
+                :src="getImageUrl(category.image_url)"
                 :alt="category.name"
                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                @error="handleImageError($event, category)"
               />
+              <!-- Display fallback if no image -->
+              <div v-else class="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center">
+                <span class="text-white text-6xl font-bold">{{ category.name.charAt(0) }}</span>
+              </div>
               <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-70"></div>
             </div>
             <div class="absolute bottom-0 left-0 right-0 p-4 text-white">
               <h3 class="text-lg font-semibold">{{ category.name }}</h3>
               <p class="text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                {{ category.itemCount }} Products
+                {{ category.products_count || 0 }} Products
               </p>
             </div>
           </router-link>
@@ -47,61 +68,80 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'Categories',
   data() {
     return {
-      categories: [
-        {
-          name: 'Jerseys',
-          slug: 'jerseys',
-          image: 'https://images.unsplash.com/photo-1517466787929-bc90951d0974?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8Zm9vdGJhbGwlMjBqZXJzZXl8ZW58MHx8MHx8&auto=format&fit=crop&w=500&q=60',
-          itemCount: 42
-        },
-        {
-          name: 'Footwear',
-          slug: 'footwear',
-          image: 'https://images.unsplash.com/photo-1543508282-6319a3e2621f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8NXx8Zm9vdGJhbGwlMjBib290c3xlbnwwfHwwfHw%3D&auto=format&fit=crop&w=500&q=60',
-          itemCount: 36
-        },
-        {
-          name: 'Equipment',
-          slug: 'equipment',
-          image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8M3x8Zm9vdGJhbGx8ZW58MHx8MHx8&auto=format&fit=crop&w=500&q=60',
-          itemCount: 28
-        },
-        {
-          name: 'Accessories',
-          slug: 'accessories',
-          image: 'https://images.unsplash.com/photo-1585670149915-6d87f9de751d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8OXx8c3BvcnRzJTIwYWNjZXNzb3JpZXN8ZW58MHx8MHx8&auto=format&fit=crop&w=500&q=60',
-          itemCount: 53
-        },
-        {
-          name: 'Training Gear',
-          slug: 'training-gear',
-          image: 'https://images.unsplash.com/photo-1518214598173-1666bc921d66?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8M3x8c3BvcnRzJTIwdHJhaW5pbmd8ZW58MHx8MHx8&auto=format&fit=crop&w=500&q=60',
-          itemCount: 39
-        },
-        {
-          name: 'Fan Merchandise',
-          slug: 'fan-merchandise',
-          image: 'https://images.unsplash.com/photo-1590075865003-e48b56637fbe?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8M3x8c3BvcnRzJTIwbWVyY2hhbmRpc2V8ZW58MHx8MHx8&auto=format&fit=crop&w=500&q=60',
-          itemCount: 67
-        },
-        {
-          name: 'Apparel',
-          slug: 'apparel',
-          image: 'https://images.unsplash.com/photo-1515186913869-f40e496eecd4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8NXx8c3BvcnRzJTIwYXBwYXJlbHxlbnwwfHwwfHw%3D&auto=format&fit=crop&w=500&q=60',
-          itemCount: 48
-        },
-        {
-          name: 'Sale Items',
-          slug: 'sale-items',
-          image: 'https://images.unsplash.com/photo-1561414927-6d86591d0c4f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8NHx8ZGlzY291bnR8ZW58MHx8MHx8&auto=format&fit=crop&w=500&q=60',
-          itemCount: 25
-        }
-      ]
+      categories: [],
+      loading: true,
+      error: null
     };
+  },
+  mounted() {
+    this.fetchCategories();
+  },
+  methods: {
+    async fetchCategories() {
+      try {
+        this.loading = true;
+        this.error = null;
+        
+        const response = await axios.get('/api/storefront/categories');
+        
+        // Handle different API response structures
+        if (response.data.data) {
+          this.categories = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          this.categories = response.data;
+        } else {
+          this.categories = response.data.categories || [];
+        }
+        
+        // Limit to top 8 categories for display
+        this.categories = this.categories.slice(0, 8);
+        
+        console.log('Categories loaded:', this.categories);
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+        this.error = 'Failed to load categories. Please try again.';
+      } finally {
+        this.loading = false;
+      }
+    },
+    
+    // Function to handle image URL formatting
+    getImageUrl(imagePath) {
+      if (!imagePath) return '';
+      
+      // If the path is a full URL, return it directly
+      if (imagePath.startsWith('http')) {
+        return imagePath;
+      }
+      
+      // Handle paths that might already have "storage/" in them
+      if (imagePath.startsWith('storage/')) {
+        return `http://localhost:8000/${imagePath}`;
+      }
+      
+      // Otherwise, assume it's a relative path on the server
+      return `http://localhost:8000/storage/${imagePath}`;
+    },
+    
+    // Function to handle image loading errors
+    handleImageError(event, category) {
+      console.error(`Error loading image for category ${category.name}:`, event);
+      // Replace with a colorful fallback with the first letter
+      const parentDiv = event.target.parentElement;
+      if (parentDiv) {
+        parentDiv.innerHTML = `
+          <div class="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center">
+            <span class="text-white text-6xl font-bold">${category.name.charAt(0)}</span>
+          </div>
+        `;
+      }
+    }
   }
 };
 </script>

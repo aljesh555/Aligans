@@ -70,17 +70,42 @@ export default {
     async fetchPrivacyPolicy() {
       this.loading = true;
       try {
-        const response = await axios.get(`${this.apiBaseUrl}/api/privacy-policy`);
+        // Fetch privacy policy from static_pages table
+        const response = await axios.get(`${this.apiBaseUrl}/api/static-pages/privacy-policy`);
+        
+        console.log('API Response:', response.data);
         
         if (response.data && response.data.success && response.data.data) {
-          this.privacyPolicies = response.data.data;
+          // Convert single policy object into array to maintain compatibility with existing template
+          const policyData = response.data.data;
+          this.privacyPolicies = [{
+            title: policyData.title || 'Privacy Policy',
+            content: policyData.content,
+            updated_at: policyData.updated_at
+          }];
+          
           console.log('Privacy policy loaded successfully', this.privacyPolicies);
         } else {
-          throw new Error('Invalid response format');
+          console.error('Invalid response format:', response.data);
+          this.error = response.data?.message || 'Failed to load privacy policy data.';
         }
       } catch (error) {
         console.error('Error fetching privacy policy:', error);
+        if (error.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          console.error('Response data:', error.response.data);
+          console.error('Response status:', error.response.status);
+          this.error = `Error ${error.response.status}: ${error.response.data?.message || 'Unable to load privacy policy'}`;
+        } else if (error.request) {
+          // The request was made but no response was received
+          console.error('No response received:', error.request);
+          this.error = 'No response from server. Please check your connection and try again.';
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          console.error('Request setup error:', error.message);
         this.error = 'Unable to load privacy policy. Please try again later.';
+        }
       } finally {
         this.loading = false;
       }

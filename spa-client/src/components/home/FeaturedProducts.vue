@@ -61,11 +61,11 @@
               </div>
               <div class="flex items-center">
                 <div v-if="product.discountPercentage" class="flex items-center">
-                  <span class="text-lg font-bold text-gray-900">${{ formatPrice(calculateDiscountedPrice(product)) }}</span>
-                  <span class="text-sm text-gray-500 line-through ml-2">${{ formatPrice(product.price) }}</span>
+                  <span class="text-lg font-bold text-gray-900">Rs {{ formatPrice(calculateDiscountedPrice(product)) }}</span>
+                  <span class="text-sm text-gray-500 line-through ml-2">Rs {{ formatPrice(product.price) }}</span>
                 </div>
                 <div v-else>
-                  <span class="text-lg font-bold text-gray-900">${{ formatPrice(product.price) }}</span>
+                  <span class="text-lg font-bold text-gray-900">Rs {{ formatPrice(product.price) }}</span>
                 </div>
               </div>
             </div>
@@ -166,38 +166,7 @@ export default {
     calculateDiscountedPrice(product) {
       if (!product.discountPercentage) return product.price;
       return product.price * (1 - product.discountPercentage / 100);
-          originalPrice: 149.99,
-          discount: 15,
-          rating: 4,
-          reviewCount: 89,
-          image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80'
-        },
-        {
-          id: 3,
-          name: 'Performance Basketball',
-          slug: 'performance-basketball',
-          category: 'Basketball',
-          price: 59.99,
-          originalPrice: 59.99,
-          discount: 0,
-          rating: 5,
-          reviewCount: 67,
-          image: 'https://images.unsplash.com/photo-1612118656942-35916945e7c2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80'
-        },
-        {
-          id: 4,
-          name: 'Carbon Fiber Tennis Racket',
-          slug: 'carbon-fiber-tennis-racket',
-          category: 'Tennis',
-          price: 199.99,
-          originalPrice: 249.99,
-          discount: 20,
-          rating: 4,
-          reviewCount: 42,
-          image: 'https://images.unsplash.com/photo-1617083332323-88f485d61212?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80'
-        }
-      ]
-    };
+    }
   }
 };
 </script>

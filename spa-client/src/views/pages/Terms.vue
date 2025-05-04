@@ -82,14 +82,69 @@ export default {
       this.error = null;
       
       try {
-        // Try the new dedicated endpoint first
+        // Fetch terms and conditions from static_pages table
+        const response = await axios.get(`${this.apiBaseUrl}/api/static-pages/terms-conditions`);
+        
+        console.log('API Response:', response.data);
+        
+        if (response.data && response.data.success && response.data.data) {
+          // Convert single terms object into array to maintain compatibility with existing template
+          const termsData = response.data.data;
+          this.termsList = [{
+            title: termsData.title || 'Terms & Conditions',
+            content: termsData.content,
+            updated_at: termsData.updated_at
+          }];
+          
+          console.log('Terms loaded successfully', this.termsList);
+        } else {
+          console.error('Invalid response format:', response.data);
+          this.error = response.data?.message || 'Failed to load terms and conditions data.';
+          
+          // Try fallback methods only if we get an explicit "not found" message
+          if (response.data?.message === 'Page not found') {
+            await this.tryFallbackMethods();
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching terms:', error);
+        if (error.response) {
+          console.error('Response data:', error.response.data);
+          console.error('Response status:', error.response.status);
+          this.error = `Error ${error.response.status}: ${error.response.data?.message || 'Unable to load terms and conditions'}`;
+          
+          // Try fallback methods on 404
+          if (error.response.status === 404) {
+            await this.tryFallbackMethods();
+          }
+        } else if (error.request) {
+          console.error('No response received:', error.request);
+          this.error = 'No response from server. Please check your connection and try again.';
+        } else {
+          console.error('Request setup error:', error.message);
+          this.error = 'Unable to load terms and conditions. Please try again later.';
+        }
+      } finally {
+        this.loading = false;
+      }
+    },
+    
+    async tryFallbackMethods() {
+      try {
+        // Try alternative endpoints if static_pages fails
+        console.log('Trying fallback methods...');
+        
+        // Try the dedicated endpoint
         const response = await axios.get(`${this.apiBaseUrl}/api/terms`);
         
         if (response.data && response.data.success && response.data.data) {
           this.termsList = response.data.data;
           console.log('Terms loaded from dedicated endpoint:', this.termsList);
-        } else {
-          // Fallback to the old endpoint
+          this.error = null;
+          return true;
+        }
+        
+        // Try the settings endpoint
           const fallbackResponse = await axios.get(`${this.apiBaseUrl}/api/settings/terms-conditions`);
           
           if (fallbackResponse.data && fallbackResponse.data.success && fallbackResponse.data.data) {
@@ -98,31 +153,14 @@ export default {
               ? fallbackResponse.data.data 
               : [fallbackResponse.data.data];
             console.log('Terms loaded from settings endpoint:', this.termsList);
-          } else {
-            this.error = 'Unable to load terms and conditions';
-          }
+          this.error = null;
+          return true;
         }
+        
+        return false;
       } catch (err) {
-        console.error('Error fetching terms:', err);
-        try {
-          // Try fallback endpoint if first one fails
-          const fallbackResponse = await axios.get(`${this.apiBaseUrl}/api/settings/terms-conditions`);
-          
-          if (fallbackResponse.data && fallbackResponse.data.success && fallbackResponse.data.data) {
-            // Convert to array if single object
-            this.termsList = Array.isArray(fallbackResponse.data.data) 
-              ? fallbackResponse.data.data 
-              : [fallbackResponse.data.data];
-            console.log('Terms loaded from settings endpoint after error:', this.termsList);
-          } else {
-            this.error = 'Failed to load terms and conditions';
-          }
-        } catch (fallbackErr) {
-          console.error('Error fetching terms from fallback:', fallbackErr);
-          this.error = 'Failed to load terms and conditions';
-        }
-      } finally {
-        this.loading = false;
+        console.error('All fallback methods failed:', err);
+        return false;
       }
     },
     

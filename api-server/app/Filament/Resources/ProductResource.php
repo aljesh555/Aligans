@@ -57,15 +57,68 @@ class ProductResource extends Resource
                                     ->schema([
                                         Forms\Components\Select::make('category_id')
                                             ->label('Category')
-                                            ->options(Category::all()->pluck('name', 'id'))
+                                            ->optionsLimit(100)
                                             ->searchable()
                                             ->required()
+                                            ->preload()
+                                            ->allowHtml()
+                                            ->options(function () {
+                                                // Get top-level categories
+                                                $topCategories = Category::whereNull('parent_id')
+                                                    ->orderBy('name')
+                                                    ->get();
+                                                
+                                                $options = [];
+                                                
+                                                // Format options with hierarchical structure
+                                                foreach ($topCategories as $topCategory) {
+                                                    // Add top category with bold formatting
+                                                    $options[$topCategory->id] = "<strong>{$topCategory->name}</strong>";
+                                                    
+                                                    // Get subcategories for this top category
+                                                    $subcategories = Category::where('parent_id', $topCategory->id)
+                                                        ->orderBy('name')
+                                                        ->get();
+                                                    
+                                                    // Add subcategories with indentation
+                                                    foreach ($subcategories as $subcategory) {
+                                                        $options[$subcategory->id] = "&nbsp;&nbsp;└─ {$subcategory->name}";
+                                                    }
+                                                }
+                                                
+                                                return $options;
+                                            })
                                             ->createOptionForm([
                                                 Forms\Components\TextInput::make('name')
                                                     ->required()
                                                     ->maxLength(255),
                                                 Forms\Components\Textarea::make('description')
                                                     ->maxLength(1000),
+                                            ])
+                                            ->columnSpan(1),
+
+                                        Forms\Components\Select::make('brand_id')
+                                            ->label('Brand')
+                                            ->relationship('brand', 'name')
+                                            ->searchable()
+                                            ->preload()
+                                            ->createOptionForm([
+                                                Forms\Components\TextInput::make('name')
+                                                    ->required()
+                                                    ->maxLength(255)
+                                                    ->live(onBlur: true)
+                                                    ->afterStateUpdated(fn (Forms\Set $set, ?string $state) =>
+                                                        $set('slug', Str::slug($state))),
+                                                    
+                                                Forms\Components\TextInput::make('slug')
+                                                    ->required()
+                                                    ->maxLength(255)
+                                                    ->unique('brands', 'slug'),
+                                                    
+                                                Forms\Components\FileUpload::make('logo_url')
+                                                    ->label('Brand Logo')
+                                                    ->image()
+                                                    ->directory('brands'),
                                             ])
                                             ->columnSpan(1),
 
@@ -126,7 +179,7 @@ class ProductResource extends Resource
                                             ->schema([
                                                 Forms\Components\TextInput::make('price')
                                                     ->numeric()
-                                                    ->prefix('$')
+                                                    ->prefix('Rs')
                                                     ->required()
                                                     ->step(0.01)
                                                     ->minValue(0)
@@ -150,7 +203,7 @@ class ProductResource extends Resource
                                                 Forms\Components\TextInput::make('discount_price')
                                                     ->label('Sale Price')
                                                     ->numeric()
-                                                    ->prefix('$')
+                                                    ->prefix('Rs')
                                                     ->step(0.01)
                                                     ->minValue(0)
                                                     ->visible(fn (Forms\Get $get) => $get('on_sale'))
@@ -223,13 +276,45 @@ class ProductResource extends Resource
                                     ->description('Upload high-quality images to showcase your product. Recommended size: 1200x1200px')
                                     ->schema([
                                         Forms\Components\FileUpload::make('image_url')
-                                            ->label('Product Image')
+                                            ->label('Main Product Image')
                                             ->helperText('Primary product image shown on product pages and listings')
                                             ->image()
                                             ->imageEditor()
                                             ->directory('products')
                                             ->maxSize(5120)
                                             ->columnSpanFull(),
+                                    ]),
+
+                                    Forms\Components\Section::make('Additional Product Images')
+                                        ->description('Add multiple images to show different angles or features of your product')
+                                        ->schema([
+                                            Forms\Components\Repeater::make('productImages')
+                                                ->relationship()
+                                                ->schema([
+                                                    Forms\Components\FileUpload::make('image_url')
+                                                        ->label('Image')
+                                                        ->image()
+                                                        ->imageEditor()
+                                                        ->directory('product-additional')
+                                                        ->maxSize(5120)
+                                                        ->required(),
+                                                    
+                                                    Forms\Components\TextInput::make('sort_order')
+                                                        ->label('Display Order')
+                                                        ->numeric()
+                                                        ->default(0)
+                                                        ->helperText('Lower numbers appear first'),
+                                                    
+                                                    Forms\Components\Toggle::make('is_active')
+                                                        ->label('Active')
+                                                        ->default(true),
+                                                ])
+                                                ->itemLabel(fn (array $state): ?string => 
+                                                    isset($state['image_url']) ? "Image {$state['sort_order']}" : null)
+                                                ->addActionLabel('Add Image')
+                                                ->reorderable()
+                                                ->defaultItems(0)
+                                                ->columns(1),
                                     ]),
                             ]),
 
@@ -311,7 +396,7 @@ class ProductResource extends Resource
                     ->size('md'),
 
                 Tables\Columns\TextColumn::make('price')
-                    ->money('USD')
+                    ->prefix('Rs. ')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('stock')

@@ -45,7 +45,7 @@
               <div class="h-40 bg-gray-100 overflow-hidden">
                 <div v-if="category.image_url" class="w-full h-full">
                   <img 
-                    :src="category.image_url" 
+                    :src="getImageUrl(category.image_url)" 
                     :alt="category.name"
                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     @error="handleImageError($event, category)"
@@ -188,6 +188,23 @@ export default {
           <span class="text-blue-600 text-4xl font-bold">${category.name.charAt(0)}</span>
         </div>
       `;
+    },
+    // Function to handle image URL formatting
+    getImageUrl(imagePath) {
+      if (!imagePath) return '';
+      
+      // If the path is a full URL, return it directly
+      if (imagePath.startsWith('http')) {
+        return imagePath;
+      }
+      
+      // Handle paths that might already have "storage/" in them
+      if (imagePath.startsWith('storage/')) {
+        return `http://localhost:8000/${imagePath}`;
+      }
+      
+      // Otherwise, assume it's a relative path on the server
+      return `http://localhost:8000/storage/${imagePath}`;
     }
   }
 };

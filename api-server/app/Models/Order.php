@@ -15,6 +15,7 @@ class Order extends Model
         'shipping_form_id',
         'payment_method',
         'status',
+        'payment_status',
         'total_amount'
     ];
 

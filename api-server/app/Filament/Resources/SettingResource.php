@@ -60,11 +60,48 @@ class SettingResource extends Resource
                 Forms\Components\Section::make()
                     ->schema([
                         Forms\Components\FileUpload::make('fileValue')
+                            ->image()
+                            ->disk('public')
+                            ->directory('settings')
                             ->visible(function ($get) {
-                                return $get('type') === 'image' || $get('type') === 'file';
+                                return $get('type') === 'image';
                             })
                             ->required(function ($get) {
-                                return $get('type') === 'image' || $get('type') === 'file';
+                                return $get('type') === 'image';
+                            })
+                            ->afterStateHydrated(function ($component, $state, $record) {
+                                // If editing an existing image setting
+                                if ($record && $record->type === 'image') {
+                                    // Try to decode the value if it's a JSON string
+                                    if (is_string($record->value)) {
+                                        try {
+                                            $decoded = json_decode($record->value, true);
+                                            if (is_string($decoded)) {
+                                                $component->state($decoded);
+                                            } else {
+                                                $component->state($record->value);
+                                            }
+                                        } catch (\Exception $e) {
+                                            $component->state($record->value);
+                                        }
+                                    } else {
+                                        $component->state($record->value);
+                                    }
+                                }
+                            })
+                            ->dehydrated(function ($get) {
+                                return $get('type') === 'image';
+                            })
+                            ->dehydrateStateUsing(fn ($state) => $state),
+                        Forms\Components\FileUpload::make('fileValue')
+                            ->acceptedFileTypes(['application/pdf', 'text/plain', 'application/zip'])
+                            ->disk('public')
+                            ->directory('files')
+                            ->visible(function ($get) {
+                                return $get('type') === 'file';
+                            })
+                            ->required(function ($get) {
+                                return $get('type') === 'file';
                             }),
                         Forms\Components\TextInput::make('stringValue')
                             ->required()

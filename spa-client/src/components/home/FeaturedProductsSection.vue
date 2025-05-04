@@ -92,10 +92,10 @@
               <div>
                       <!-- Show discount price if on sale -->
                       <template v-if="product.on_sale && product.discount_price">
-                        <span class="text-gray-400 line-through">${{ formatPrice(product.price) }}</span>
-                        <p class="text-xl font-bold text-gray-900">${{ formatPrice(product.discount_price) }}</p>
+                        <span class="text-gray-400 line-through">Rs {{ formatPrice(product.price) }}</span>
+                        <p class="text-xl font-bold text-gray-900">Rs {{ formatPrice(product.discount_price) }}</p>
                       </template>
-                      <p v-else class="text-xl font-bold text-gray-900">${{ formatPrice(product.price) }}</p>
+                      <p v-else class="text-xl font-bold text-gray-900">Rs {{ formatPrice(product.price) }}</p>
               </div>
                     <button 
                       @click="addToCart(product)" 
@@ -135,8 +135,14 @@
       </div>
       
       <div class="text-center mt-12">
-        <router-link to="/products" class="inline-block px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors duration-300">
+        <router-link 
+          to="/products" 
+          class="inline-flex items-center text-blue-600 font-medium hover:text-blue-800 transition-colors"
+        >
           View All Products
+          <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+          </svg>
         </router-link>
       </div>
     </div>

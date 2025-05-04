@@ -12,6 +12,46 @@
       </div>
     </div>
     
+    <!-- Missing attributes modal -->
+    <div v-if="showMissingAttributesModal" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showMissingAttributesModal = false"></div>
+        
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="sm:flex sm:items-start">
+              <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 sm:mx-0 sm:h-10 sm:w-10">
+                <svg class="h-6 w-6 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                  Size and Color Required
+                </h3>
+                <div class="mt-2">
+                  <p class="text-sm text-gray-500">
+                    Please select both size and color for all products in your cart before proceeding to checkout. 
+                    Return to the product page to make your selections.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button @click="goToProductPage" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+              Go to Product Page
+            </button>
+            <button @click="showMissingAttributesModal = false" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <!-- Main Header -->
     <div class="container mx-auto px-4 py-4">
       <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
@@ -70,7 +110,7 @@
         <div class="relative hidden md:block flex-grow max-w-2xl">
           <input 
             type="text" 
-            placeholder="Search for products..." 
+            placeholder="Search for products, brands, categories..." 
             v-model="searchQuery"
             @keyup.enter="performSearch"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -228,9 +268,9 @@
                   <router-link to="/cart" class="bg-gray-100 hover:bg-gray-200 text-center py-2 rounded-md text-sm font-medium transition">
                     View Cart
                   </router-link>
-                  <router-link to="/checkout/shipping" class="bg-blue-600 hover:bg-blue-700 text-white text-center py-2 rounded-md text-sm font-medium transition">
+                  <button @click="handleCheckout" class="bg-blue-600 hover:bg-blue-700 text-white text-center py-2 rounded-md text-sm font-medium transition">
                     Checkout
-                  </router-link>
+                  </button>
                 </div>
               </div>
             </div>
@@ -242,7 +282,7 @@
       <div class="md:hidden relative mt-4">
         <input 
           type="text" 
-          placeholder="Search for products..." 
+          placeholder="Search for products, brands, categories..." 
           v-model="searchQuery"
           @keyup.enter="performSearch"
           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -261,15 +301,12 @@
     <nav class="border-t border-gray-200 hidden md:block">
       <div class="container mx-auto px-4">
         <ul class="flex">
-          <!-- Mega Menu Dropdown -->
+          <!-- Hover-Activated Categories Dropdown -->
           <li class="group relative categories-dropdown-container">
             <button 
-              @click="toggleCategoriesDropdown" 
               class="flex items-center gap-1 text-gray-700 hover:text-blue-700 transition px-4 py-4"
+              @click="categoriesDropdownOpen = !categoriesDropdownOpen"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
               <span>Categories</span>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -277,7 +314,10 @@
             </button>
             
             <!-- Categories Dropdown Menu -->
-            <div v-show="categoriesDropdownOpen" class="absolute left-0 mt-2 w-64 bg-white shadow-lg rounded-md z-50">
+            <div 
+              v-show="categoriesDropdownOpen" 
+              class="absolute left-0 mt-0 w-64 bg-white shadow-lg rounded-b-md z-50 border-t-2 border-blue-600 categories-dropdown-menu"
+            >
               <!-- Only show the loading indicator if we have no categories -->
               <div v-if="categoriesLoading && topCategories.length === 0" class="py-4 px-4 flex items-center justify-center">
                 <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -292,27 +332,37 @@
                 <div 
                   v-for="category in topCategories" 
                   :key="category.id"
-                  @mouseenter="setHoveredCategory(category.id)"
-                  @mouseleave="resetHoveredCategory"
-                  class="relative group px-4 py-2 hover:bg-gray-50"
+                  class="relative hover:bg-blue-50 category-item"
                 >
-                  <router-link :to="'/category/' + category.id" class="flex items-center justify-between w-full">
-                    <span>{{ category.name }}</span>
-                    <svg v-if="getSubcategories(category.id).length > 0" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </router-link>
+                  <div class="flex items-center justify-between px-4 py-3 w-full transition-colors duration-200 text-gray-700 hover:text-blue-700 font-medium">
+                    <router-link 
+                      :to="'/category/' + category.id" 
+                      class="flex-grow"
+                    >
+                      <span>{{ category.name }}</span>
+                    </router-link>
+                    <button 
+                      v-if="getSubcategories(category.id).length > 0"
+                      @click="toggleSubcategory(category.id)"
+                      class="ml-2 focus:outline-none"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
                   
-                  <!-- Subcategories Menu -->
+                  <!-- Subcategories Menu - Shows on click -->
                   <div 
-                    v-if="hoveredCategory === category.id && getSubcategories(category.id).length > 0"
-                    class="absolute left-full top-0 min-w-[200px] bg-white shadow-lg rounded-md py-2"
+                    v-if="getSubcategories(category.id).length > 0"
+                    v-show="activeCategory === category.id"
+                    class="absolute left-full top-0 min-w-[200px] bg-white shadow-lg rounded-md py-2 subcategory-menu"
                   >
                     <router-link 
                       v-for="subcategory in getSubcategories(category.id)"
                       :key="subcategory.id"
                       :to="'/category/' + subcategory.id"
-                      class="block px-4 py-2 hover:bg-gray-50 whitespace-nowrap"
+                      class="block px-4 py-2 hover:bg-blue-50 hover:text-blue-700 whitespace-nowrap transition-colors duration-200"
                     >
                       {{ subcategory.name }}
                     </router-link>
@@ -343,13 +393,8 @@
             </router-link>
           </li>
           <li>
-            <router-link to="/teams" class="block px-4 py-4 text-gray-700 hover:text-blue-700 font-medium">
-              Teams
-            </router-link>
-          </li>
-          <li>
-            <router-link to="/events" class="block px-4 py-4 text-gray-700 hover:text-blue-700 font-medium">
-              Events
+            <router-link to="/brands" class="block px-4 py-4 text-gray-700 hover:text-blue-700 font-medium">
+              Brands
             </router-link>
           </li>
         </ul>
@@ -369,17 +414,47 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
-          <div v-show="mobileCategoriesOpen" class="py-2 pl-8 space-y-2 bg-gray-50 rounded-md mt-1">
+          <div v-show="mobileCategoriesOpen" class="py-2 pl-4 space-y-2 bg-gray-50 rounded-md mt-1">
             <!-- Dynamic mobile categories - only show if loaded -->
             <template v-if="!categoriesLoading && topCategories.length > 0">
-              <router-link 
-                v-for="category in topCategories" 
-                :key="category.id" 
-                :to="'/category/' + category.id" 
-                class="block py-1 hover:text-blue-700"
-              >
-                {{ category.name }}
-              </router-link>
+              <div v-for="category in topCategories" :key="category.id" class="mb-3">
+                <div class="flex justify-between items-center">
+                  <!-- Top category -->
+                  <router-link 
+                    :to="'/category/' + category.id" 
+                    class="py-2 hover:text-blue-700 font-medium flex-grow"
+                  >
+                    {{ category.name }}
+                  </router-link>
+                  
+                  <!-- Toggle button for subcategories (if any) -->
+                  <button 
+                    v-if="getSubcategories(category.id).length > 0"
+                    @click="toggleMobileSubcategory(category.id)"
+                    class="px-2 text-gray-500 flex items-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform duration-200" :class="{'rotate-180': activeCategory === category.id}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <!-- Subcategories (if any) - with transition -->
+                <div 
+                  v-if="getSubcategories(category.id).length > 0"
+                  v-show="activeCategory === category.id"
+                  class="pl-4 mt-1 border-l-2 border-blue-200 overflow-hidden transition-all duration-300"
+                >
+                  <router-link 
+                    v-for="subcategory in getSubcategories(category.id)" 
+                    :key="subcategory.id"
+                    :to="'/category/' + subcategory.id" 
+                    class="block py-2 text-sm hover:text-blue-700"
+                  >
+                    {{ subcategory.name }}
+                  </router-link>
+                </div>
+              </div>
             </template>
             <!-- Loading state -->
             <div v-else-if="categoriesLoading" class="py-1 flex items-center gap-2 text-gray-500">
@@ -396,8 +471,7 @@
         <li><router-link to="/products" class="block py-2 px-4 hover:bg-gray-50 rounded-md">All Products</router-link></li>
         <li><router-link to="/new-arrivals" class="block py-2 px-4 hover:bg-gray-50 rounded-md">New Arrivals</router-link></li>
         <li><router-link to="/products/sale" class="block py-2 px-4 hover:bg-gray-50 rounded-md text-red-600 hover:text-red-700">Sale</router-link></li>
-        <li><router-link to="/teams" class="block py-2 px-4 hover:bg-gray-50 rounded-md">Teams</router-link></li>
-        <li><router-link to="/events" class="block py-2 px-4 hover:bg-gray-50 rounded-md">Events</router-link></li>
+        <li><router-link to="/brands" class="block py-2 px-4 hover:bg-gray-50 rounded-md">Brands</router-link></li>
         
         <!-- Mobile Account Links -->
         <li v-if="isLoggedIn">
@@ -465,6 +539,7 @@ export default {
       mobileMenuOpen: false,
       mobileCategoriesOpen: false,
       categoriesDropdownOpen: false,
+      activeCategory: null, // Track which category is being hovered
       cartItemsLocal: [], // Local reactive cart items
       wishlistItemsLocal: [], // Local reactive wishlist items
       cartCount: 0, // Direct reactive counter
@@ -473,12 +548,12 @@ export default {
       topCategories: [], // Top level categories
       categoriesLoading: true,
       categoriesError: null,
-      hoveredCategory: null, // Track which category is being hovered
       logo: cachedLogoData.logo, // Pre-loaded from localStorage
       cachedBase64: cachedLogoData.cachedBase64, // Pre-loaded base64 image
       logoLoading: true, // Always start with loading state
       logoError: null,
-      searchQuery: ''
+      searchQuery: '',
+      showMissingAttributesModal: false
     };
   },
   computed: {
@@ -522,8 +597,8 @@ export default {
     document.addEventListener('user-login', this.checkAuthState);
     document.addEventListener('user-logout', this.checkAuthState);
     
-    // Listen for clicks outside the categories dropdown to close it
-    document.addEventListener('click', this.closeDropdownsOnClickOutside);
+    // Add event listener to close categories dropdown when clicking outside
+    document.addEventListener('click', this.handleOutsideClick);
   },
   beforeUnmount() {
     // Remove event listeners when component is unmounted
@@ -531,7 +606,7 @@ export default {
     document.removeEventListener('cart-updated', this.handleCartUpdate);
     document.removeEventListener('user-login', this.checkAuthState);
     document.removeEventListener('user-logout', this.checkAuthState);
-    document.removeEventListener('click', this.closeDropdownsOnClickOutside);
+    document.removeEventListener('click', this.handleOutsideClick);
   },
   methods: {
     ...mapActions({
@@ -579,11 +654,19 @@ export default {
     getSubcategories(parentId) {
       return this.categories.filter(cat => cat.parent_id === parentId);
     },
-    setHoveredCategory(categoryId) {
-      this.hoveredCategory = categoryId;
+    activateCategory(categoryId) {
+      this.activeCategory = categoryId;
     },
-    resetHoveredCategory() {
-      this.hoveredCategory = null;
+    deactivateCategory() {
+      // Use setTimeout to avoid menu flickering when moving between main category and subcategory menu
+      setTimeout(() => {
+        // Only deactivate if mouse isn't over any menu item
+        const isOverCategory = document.querySelector('.category-item:hover');
+        const isOverSubcategory = document.querySelector('.subcategory-menu:hover');
+        if (!isOverCategory && !isOverSubcategory) {
+          this.activeCategory = null;
+        }
+      }, 100);
     },
     checkAuthState() {
       // This method checks localStorage directly in case store isn't updated
@@ -711,28 +794,14 @@ export default {
       
       this.$router.push('/login');
     },
-    closeDropdownsOnClickOutside(event) {
-      // Close categories dropdown if click is outside of it
-      if (this.categoriesDropdownOpen) {
-        const categoriesDropdown = this.$el.querySelector('.categories-dropdown-container');
-        if (categoriesDropdown && !categoriesDropdown.contains(event.target)) {
-          this.categoriesDropdownOpen = false;
-        }
-      }
-    },
-    toggleCategoriesDropdown(event) {
-      // Stop event propagation to prevent immediate closing
-      event.stopPropagation();
-      this.categoriesDropdownOpen = !this.categoriesDropdownOpen;
-    },
     async fetchLogo() {
       // Always start in loading state to prevent showing dummy data
       this.logoLoading = true;
       
       try {
-        // Fetch updated logo data
-        const response = await axios.get('http://localhost:8000/api/logo/active');
-        console.log('Logo data received:', response.data);
+        // Fetch logo from settings table instead of logos table
+        const response = await axios.get('http://localhost:8000/api/settings/logo');
+        console.log('Logo data received from settings:', response.data);
         
         if (response.data) {
           const freshLogo = response.data;
@@ -755,7 +824,7 @@ export default {
           }
         } 
       } catch (error) {
-        console.error('Error fetching logo:', error);
+        console.error('Error fetching logo from settings:', error);
         this.logoError = 'Error loading logo';
       } finally {
         // Set loading to false regardless of outcome
@@ -851,7 +920,7 @@ export default {
         return;
       }
       
-      console.log('Performing search with query:', this.searchQuery.trim());
+      console.log('Performing comprehensive search with query:', this.searchQuery.trim());
       
       // Navigate to search results page with query parameter
       this.$router.push({
@@ -869,6 +938,90 @@ export default {
       
       // Clear search query after search
       // Uncomment if you want to clear after search: this.searchQuery = '';
+    },
+    toggleMobileSubcategory(categoryId) {
+      // Toggle the active category
+      if (this.activeCategory === categoryId) {
+        this.activeCategory = null;
+      } else {
+        this.activeCategory = categoryId;
+      }
+    },
+    toggleSubcategory(categoryId) {
+      // Toggle the active category
+      if (this.activeCategory === categoryId) {
+        this.activeCategory = null;
+      } else {
+        this.activeCategory = categoryId;
+      }
+    },
+    handleOutsideClick(event) {
+      // Check if the click was outside the categories dropdown
+      const categoriesContainer = this.$el.querySelector('.categories-dropdown-container');
+      if (categoriesContainer && !categoriesContainer.contains(event.target)) {
+        this.categoriesDropdownOpen = false;
+      }
+      
+      // Close subcategory menu if click is outside
+      const categoryItems = this.$el.querySelectorAll('.category-item');
+      const clickedInsideCategory = Array.from(categoryItems).some(item => item.contains(event.target));
+      const subcategoryMenu = this.$el.querySelector('.subcategory-menu');
+      const clickedInsideSubcategory = subcategoryMenu && subcategoryMenu.contains(event.target);
+      
+      if (!clickedInsideCategory && !clickedInsideSubcategory) {
+        this.activeCategory = null;
+      }
+    },
+    // Navigate to the product page of the first item with missing attributes
+    goToProductPage() {
+      const missingAttributesItems = this.cartItemsLocal.filter(item => {
+        const needsSize = !item.size || item.size === null || item.size === '';
+        const needsColor = !item.color || item.color === null || item.color === '';
+        return needsSize || needsColor;
+      });
+      
+      if (missingAttributesItems.length > 0) {
+        // Navigate to the first product that needs attributes
+        const productId = missingAttributesItems[0].id || missingAttributesItems[0].product_id;
+        this.$router.push(`/products/${productId}`);
+      } else {
+        // Fallback to products page if no specific item found
+        this.$router.push('/products');
+      }
+      
+      // Close the modal
+      this.showMissingAttributesModal = false;
+    },
+    // Handle checkout button click with validation
+    handleCheckout() {
+      // Check if user is logged in
+      const isUserLoggedIn = this.isLoggedIn;
+      
+      // If not logged in, redirect to login page with return URL
+      if (!isUserLoggedIn) {
+        this.$router.push({ 
+          path: '/login', 
+          query: { redirect: '/checkout/shipping' } 
+        });
+        return;
+      }
+      
+      // Check if any product is missing size or color selection
+      const missingRequiredAttributes = this.cartItemsLocal.filter(item => {
+        // More robust check for missing size/color
+        const needsSize = !item.size || item.size === null || item.size === '';
+        const needsColor = !item.color || item.color === null || item.color === '';
+        return needsSize || needsColor;
+      });
+      
+      if (missingRequiredAttributes.length > 0) {
+        // Show modal instead of alert
+        this.showMissingAttributesModal = true;
+        return;
+      }
+      
+      // If logged in and all products have size/color, proceed to checkout
+      this.$router.push('/checkout/shipping');
     }
   }
 };
@@ -957,5 +1110,49 @@ export default {
   .mobile-menu.open {
     max-height: 1000px;
   }
+}
+
+/* Category menu interactions */
+.category-item {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.category-item:hover {
+  background-color: rgba(219, 234, 254, 0.5); /* Light blue hover background */
+}
+
+.subcategory-menu {
+  opacity: 1;
+  transition: opacity 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-left: 2px solid #2563eb; /* Blue accent for subcategory menu */
+  z-index: 60; /* Ensure it's above other elements */
+}
+
+.subcategory-menu[style*="display: none"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.subcategory-menu:not([style*="display: none"]) {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Animate dropdown opening */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.categories-dropdown-menu {
+  animation: fadeIn 0.2s ease-in-out;
 }
 </style> 
