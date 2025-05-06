@@ -10,46 +10,6 @@
           <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
         </div>
         
-        <!-- Missing attributes modal -->
-        <div v-if="showMissingAttributesModal" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showMissingAttributesModal = false"></div>
-            
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div class="sm:flex sm:items-start">
-                  <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 sm:mx-0 sm:h-10 sm:w-10">
-                    <svg class="h-6 w-6 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                  </div>
-                  <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                      Size and Color Required
-                    </h3>
-                    <div class="mt-2">
-                      <p class="text-sm text-gray-500">
-                        Please select both size and color for all products in your cart before proceeding to checkout. 
-                        Return to the product page to make your selections.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button @click="goToProductPage" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
-                  Go to Product Page
-                </button>
-                <button @click="showMissingAttributesModal = false" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div v-else-if="cartItems.length === 0" class="bg-white rounded-lg shadow-sm p-8 text-center">
           <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -227,7 +187,6 @@ export default {
     const cartItems = ref([]);
     const loading = ref(true);
     const discount = ref(0);
-    const showMissingAttributesModal = ref(false);
     
     // Header state
     const mobileMenuOpen = ref(false);
@@ -322,12 +281,10 @@ export default {
       e.target.src = 'https://via.placeholder.com/150';
     };
     
-    // Proceed to checkout
+    // Proceed to checkout with validation
     const proceedToCheckout = () => {
       // Check if user is logged in
-      const user = localStorage.getItem('user');
-      if (!user) {
-        // If not logged in, redirect to login page with return URL
+      if (!isLoggedIn.value) {
         router.push({
           path: '/login',
           query: { redirect: '/checkout/shipping' }
@@ -337,40 +294,25 @@ export default {
       
       // Check if any product is missing size or color selection
       const missingRequiredAttributes = cartItems.value.filter(item => {
-        // More robust check for missing size/color
         const needsSize = !item.size || item.size === null || item.size === '';
         const needsColor = !item.color || item.color === null || item.color === '';
         return needsSize || needsColor;
       });
       
       if (missingRequiredAttributes.length > 0) {
-        // Show modal instead of alert
-        showMissingAttributesModal.value = true;
+        // Get Header component reference and show simple alert
+        const headerComponent = document.querySelector('header').__vue__;
+        if (headerComponent && typeof headerComponent.showAlert === 'function') {
+          headerComponent.showAlert("Please select size and color for all items in your cart before checkout.");
+        } else {
+          // Fallback to browser alert if Header component isn't accessible
+          alert("Please select size and color for all items in your cart before checkout.");
+        }
         return;
       }
       
-      // If logged in, save cart to localStorage and proceed to checkout
+      // All validation passed, proceed to checkout
       router.push('/checkout/shipping');
-    };
-    
-    // Navigate to the product page of the first item with missing attributes
-    const goToProductPage = () => {
-      const missingAttributesItems = cartItems.value.filter(item => {
-        const needsSize = !item.size || item.size === null || item.size === '';
-        const needsColor = !item.color || item.color === null || item.color === '';
-        return needsSize || needsColor;
-      });
-      
-      if (missingAttributesItems.length > 0) {
-        // Navigate to the first product that needs attributes
-        router.push(`/products/${missingAttributesItems[0].id}`);
-      } else {
-        // Fallback to products page if no specific item found
-        router.push('/products');
-      }
-      
-      // Close the modal
-      showMissingAttributesModal.value = false;
     };
     
     // Computed properties
@@ -421,8 +363,6 @@ export default {
       removeItem,
       handleImageError,
       proceedToCheckout,
-      showMissingAttributesModal,
-      goToProductPage,
       mobileMenuOpen,
       categoriesDropdownOpen,
       accountDropdownOpen,

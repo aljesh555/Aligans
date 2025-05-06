@@ -6,9 +6,13 @@ use App\Filament\Resources\ProductResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Notifications\Notification;
+use App\Filament\Resources\Concerns\FixesImageUploads;
+use Illuminate\Support\Facades\Storage;
 
 class EditProduct extends EditRecord
 {
+    use FixesImageUploads;
+    
     protected static string $resource = ProductResource::class;
 
     protected function getHeaderActions(): array
@@ -22,6 +26,11 @@ class EditProduct extends EditRecord
                         ->body('The product has been deleted successfully.')
                 ),
             Actions\ViewAction::make(),
+            
+            // Add image replacement actions
+            static::createReplaceImageAction('image_url', 'products', 'Replace Main Image'),
+            static::createClearImageAction('image_url', 'Clear Main Image'),
+            
             Actions\ForceDeleteAction::make(),
             Actions\RestoreAction::make(),
         ];

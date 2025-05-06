@@ -11,9 +11,12 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
+use App\Filament\Resources\Concerns\FixesImageUploads;
 
 class BlogPostResource extends Resource
 {
+    use FixesImageUploads;
+    
     protected static ?string $model = BlogPost::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
@@ -55,16 +58,10 @@ class BlogPostResource extends Resource
                             ->maxLength(255)
                             ->columnSpan('full'),
                         
-                        Forms\Components\FileUpload::make('featured_image')
-                            ->image()
-                            ->maxSize(5120) // 5MB
-                            ->directory('blog')
-                            ->visibility('public')
-                            ->disk('public')
-                            ->imageResizeMode('cover')
-                            ->imageCropAspectRatio('16:9')
-                            ->imageResizeTargetWidth('1200')
-                            ->imageResizeTargetHeight('675')
+                        static::fixImageUpload(
+                            Forms\Components\FileUpload::make('featured_image'),
+                            'blog'
+                        )
                             ->columnSpan('full'),
                         
                         Forms\Components\Select::make('status')

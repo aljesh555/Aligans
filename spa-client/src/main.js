@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import './assets/css/tailwind.css'
+import './assets/css/transparent-images.css'
 import axios from 'axios'
 import store from './store'
 

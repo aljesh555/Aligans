@@ -15,9 +15,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Collection;
+use App\Filament\Resources\Concerns\FixesImageUploads;
 
 class ProductResource extends Resource
 {
+    use FixesImageUploads;
+
     protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
@@ -275,13 +278,12 @@ class ProductResource extends Resource
                                 Forms\Components\Section::make('Product Images')
                                     ->description('Upload high-quality images to showcase your product. Recommended size: 1200x1200px')
                                     ->schema([
-                                        Forms\Components\FileUpload::make('image_url')
-                                            ->label('Main Product Image')
-                                            ->helperText('Primary product image shown on product pages and listings')
-                                            ->image()
-                                            ->imageEditor()
-                                            ->directory('products')
-                                            ->maxSize(5120)
+                                        static::fixImageUpload(
+                                            Forms\Components\FileUpload::make('image_url')
+                                                ->label('Main Product Image')
+                                                ->helperText('Primary product image shown on product pages and listings'),
+                                            'products'
+                                        )
                                             ->columnSpanFull(),
                                     ]),
 
@@ -291,13 +293,12 @@ class ProductResource extends Resource
                                             Forms\Components\Repeater::make('productImages')
                                                 ->relationship()
                                                 ->schema([
-                                                    Forms\Components\FileUpload::make('image_url')
-                                                        ->label('Image')
-                                                        ->image()
-                                                        ->imageEditor()
-                                                        ->directory('product-additional')
-                                                        ->maxSize(5120)
-                                                        ->required(),
+                                                    static::fixImageUpload(
+                                                        Forms\Components\FileUpload::make('image_url')
+                                                            ->label('Image')
+                                                            ->required(),
+                                                        'product-additional'
+                                                    ),
                                                     
                                                     Forms\Components\TextInput::make('sort_order')
                                                         ->label('Display Order')

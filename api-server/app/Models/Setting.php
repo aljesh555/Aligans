@@ -39,29 +39,78 @@ class Setting extends Model
      */
     public function setValueAttribute($value)
     {
-        // For image type, ensure the value is a JSON string
-        if ($this->attributes['type'] === 'image' && is_string($value) && !$this->isJson($value)) {
+        // For image type, ensure the value is properly handled
+        if (isset($this->attributes['type']) && $this->attributes['type'] === 'image') {
+            // If empty or null, store as null
+            if (empty($value) || $value === 'null' || $value === '""') {
+                $this->attributes['value'] = null;
+                return;
+            }
+            
+            // If already a JSON string, validate it and store as is
+            if (is_string($value) && $this->isJson($value)) {
+                $decoded = json_decode($value, true);
+                // If valid decoded JSON that's not empty, store as is
+                if (!empty($decoded)) {
+                    $this->attributes['value'] = $value;
+                } else {
+                    // Invalid or empty JSON, store as null
+                    $this->attributes['value'] = null;
+                }
+                return;
+            }
+            
+            // Handle Livewire/Filament temp uploads with JSON encoding
+            if (is_array($value) || is_object($value)) {
+                // If it's a single file in an array, extract it
+                if (is_array($value) && count($value) === 1) {
+                    $this->attributes['value'] = json_encode(reset($value));
+                } else {
+                    $this->attributes['value'] = json_encode($value);
+                }
+                // Log what was saved for debugging
+                \Illuminate\Support\Facades\Log::info('Saved setting image value from array/object', [
+                    'key' => $this->attributes['key'] ?? 'unknown',
+                    'saved_value' => $this->attributes['value']
+                ]);
+                return;
+            }
+            
+            // Fallback for any other type
             $this->attributes['value'] = json_encode($value);
-        } 
-        // For string type, ensure the value is a JSON string
-        else if ($this->attributes['type'] === 'string' && is_string($value) && !$this->isJson($value)) {
-            $this->attributes['value'] = json_encode($value);
+            \Illuminate\Support\Facades\Log::info('Saved setting image value with fallback', [
+                'key' => $this->attributes['key'] ?? 'unknown',
+                'value_type' => gettype($value)
+            ]);
+            return;
         }
-        // For repeater type or already JSON formatted, store as is
-        else {
+        
+        // For other types, handle normally
+        if (is_array($value) || is_object($value)) {
+            $this->attributes['value'] = json_encode($value);
+        } else {
             $this->attributes['value'] = $value;
         }
     }
-
+    
     /**
-     * Check if a string is a valid JSON
-     *
-     * @param  string  $string
+     * Check if a string is valid JSON
+     * 
+     * @param string $string
      * @return bool
      */
-    private function isJson($string) {
-        json_decode($string);
-        return (json_last_error() == JSON_ERROR_NONE);
+    protected function isJson($string) 
+    {
+        if (!is_string($string)) {
+            return false;
+        }
+        
+        try {
+            $result = json_decode($string);
+            return (json_last_error() === JSON_ERROR_NONE);
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     // /**

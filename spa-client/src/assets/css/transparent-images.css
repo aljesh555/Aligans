@@ -1,0 +1,48 @@
+/* Reset for transparent images - helps across browsers */
+
+/* Global reset for any logo-related images */
+img.transparent-img, 
+.transparent-img img,
+.logo-image {
+  /* Ensure transparent background */
+  background-color: transparent !important;
+  background-image: none !important;
+  
+  /* Fix for Firefox transparent PNG rendering */
+  -moz-background-clip: padding; 
+  -webkit-background-clip: padding;
+  background-clip: padding-box;
+  
+  /* Improve image rendering in various browsers */
+  image-rendering: -webkit-optimize-contrast; /* Chrome, Safari */
+  image-rendering: crisp-edges; /* Firefox */
+  
+  /* Disable any default browser styles that might affect transparency */
+  border: none;
+  box-shadow: none !important;
+  
+  /* Ensure proper blending with background */
+  mix-blend-mode: normal;
+}
+
+/* Container for transparent images - extra safety */
+.transparent-container {
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border: none;
+}
+
+/* Fix for browsers that might add unwanted backgrounds */
+.logo-wrapper {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* Fix for Internet Explorer PNG alpha channel issues */
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+  /* IE10+ specific styles */
+  .logo-image {
+    background-color: transparent !important;
+  }
+} 

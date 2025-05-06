@@ -12,9 +12,12 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Resources\Concerns\FixesImageUploads;
 
 class SettingResource extends Resource
 {
+    use FixesImageUploads;
+    
     protected static ?string $model = Setting::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-cog';
@@ -63,36 +66,75 @@ class SettingResource extends Resource
                             ->image()
                             ->disk('public')
                             ->directory('settings')
+                            ->visibility('public')
                             ->visible(function ($get) {
                                 return $get('type') === 'image';
                             })
-                            ->required(function ($get) {
-                                return $get('type') === 'image';
+                            ->required(function ($get, $record) {
+                                // Only required if it's a new record or doesn't have an existing value
+                                return $get('type') === 'image' && (
+                                    !$record || 
+                                    empty($record->value) || 
+                                    $record->value === '""' || 
+                                    $record->value === 'null'
+                                );
                             })
+                            ->maxSize(2048) // 2MB - smaller size
                             ->afterStateHydrated(function ($component, $state, $record) {
-                                // If editing an existing image setting
-                                if ($record && $record->type === 'image') {
-                                    // Try to decode the value if it's a JSON string
-                                    if (is_string($record->value)) {
-                                        try {
-                                            $decoded = json_decode($record->value, true);
-                                            if (is_string($decoded)) {
-                                                $component->state($decoded);
-                                            } else {
-                                                $component->state($record->value);
-                                            }
-                                        } catch (\Exception $e) {
+                                // Only proceed if we have a record and it's an image type
+                                if (!$record || $record->type !== 'image') {
+                                    return;
+                                }
+                                
+                                // Log the value being hydrated
+                                \Illuminate\Support\Facades\Log::info('Hydrating image value', [
+                                    'key' => $record->key, 
+                                    'value' => $record->value
+                                ]);
+                                
+                                // Handle different types of stored values
+                                if (is_string($record->value)) {
+                                    try {
+                                        $decoded = json_decode($record->value, true);
+                                        
+                                        // If decoded is a string, use it directly
+                                        if (is_string($decoded)) {
+                                            $component->state($decoded);
+                                        } 
+                                        // If it's an array with a single item, use that
+                                        else if (is_array($decoded) && count($decoded) === 1) {
+                                            $component->state(reset($decoded));
+                                        }
+                                        // Otherwise use the decoded value (likely an array)
+                                        else if (!empty($decoded)) {
+                                            $component->state($decoded);
+                                        }
+                                        // Fall back to original value if decode results in null/empty
+                                        else if (!empty($record->value) && $record->value !== 'null' && $record->value !== '""') {
                                             $component->state($record->value);
                                         }
-                                    } else {
-                                        $component->state($record->value);
+                                    } catch (\Exception $e) {
+                                        // If we can't decode JSON, try using the raw value
+                                        if (!empty($record->value) && $record->value !== 'null' && $record->value !== '""') {
+                                            $component->state($record->value);
+                                        }
                                     }
+                                } 
+                                // If value is already an array or other type
+                                else if (!empty($record->value)) {
+                                    $component->state($record->value);
                                 }
                             })
                             ->dehydrated(function ($get) {
                                 return $get('type') === 'image';
                             })
-                            ->dehydrateStateUsing(fn ($state) => $state),
+                            ->dehydrateStateUsing(function ($state) {
+                                // Log what's being dehydrated
+                                \Illuminate\Support\Facades\Log::info('Dehydrating image value', [
+                                    'state' => $state
+                                ]);
+                                return $state;
+                            }),
                         Forms\Components\FileUpload::make('fileValue')
                             ->acceptedFileTypes(['application/pdf', 'text/plain', 'application/zip'])
                             ->disk('public')

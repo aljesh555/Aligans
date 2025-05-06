@@ -11,15 +11,40 @@ import { getToken, isAuthenticated } from './auth';
  */
 export const addToWishlist = async (product) => {
   try {
+    // Ensure we have a consistent image field
+    const productWithImage = {
+      ...product,
+      // Prioritize image field, then image_url, then thumbnail
+      image: product.image || product.image_url || product.thumbnail
+    };
+    
+    console.log('Adding to wishlist with image:', productWithImage.image);
+    
     if (isAuthenticated()) {
       // Authenticated users: Use the API
       const response = await axios.post('/api/wishlist', {
-        product_id: product.id
+        product_id: productWithImage.id
       }, {
         headers: {
           'Authorization': `Bearer ${getToken()}`
         }
       });
+      
+      // Add to localStorage as well for faster access
+      const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
+      const existingIndex = wishlist.findIndex(item => item.id === productWithImage.id);
+      
+      if (existingIndex === -1) {
+        wishlist.push({
+          id: productWithImage.id,
+          name: productWithImage.name,
+          price: productWithImage.price,
+          image: productWithImage.image,
+          addedAt: new Date().toISOString()
+        });
+        
+        localStorage.setItem('wishlist', JSON.stringify(wishlist));
+      }
       
       // Notify other components that wishlist has been updated
       document.dispatchEvent(new Event('wishlist-updated'));
@@ -30,15 +55,15 @@ export const addToWishlist = async (product) => {
       const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
       
       // Check if product is already in wishlist
-      const existingIndex = wishlist.findIndex(item => item.id === product.id);
+      const existingIndex = wishlist.findIndex(item => item.id === productWithImage.id);
       
       // Only add if it doesn't exist
       if (existingIndex === -1) {
         wishlist.push({
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          image: product.image || product.thumbnail || product.image_url,
+          id: productWithImage.id,
+          name: productWithImage.name,
+          price: productWithImage.price,
+          image: productWithImage.image,
           addedAt: new Date().toISOString()
         });
         
@@ -180,25 +205,67 @@ export const getWishlist = async () => {
       });
       
       // Store in localStorage as well for faster access
-      const wishlistItems = response.data.data.map(item => ({
-        id: item.product_id,
-        name: item.product.name,
-        price: item.product.price,
-        image: item.product.image_url || item.product.thumbnail,
-        addedAt: item.created_at
-      }));
+      const wishlistItems = response.data.data.map(item => {
+        // Make sure we have a valid image URL
+        let imageUrl = item.product.image_url || item.product.thumbnail;
+        
+        // Format image URL if needed
+        if (imageUrl && !imageUrl.startsWith('http')) {
+          imageUrl = `http://localhost:8000/storage/${imageUrl}`;
+        }
+        
+        return {
+          id: item.product_id,
+          name: item.product.name,
+          price: item.product.price,
+          image: imageUrl,
+          addedAt: item.created_at
+        };
+      });
       
       localStorage.setItem('wishlist', JSON.stringify(wishlistItems));
       
       return wishlistItems;
     } else {
       // Non-authenticated users: Use localStorage
-      return JSON.parse(localStorage.getItem('wishlist')) || [];
+      const items = JSON.parse(localStorage.getItem('wishlist')) || [];
+      
+      // Ensure all items have proper image URLs
+      return items.map(item => {
+        // Make sure we have a valid image URL
+        let imageUrl = item.image;
+        
+        // Format image URL if needed
+        if (imageUrl && !imageUrl.startsWith('http')) {
+          imageUrl = `http://localhost:8000/storage/${imageUrl}`;
+        }
+        
+        return {
+          ...item,
+          image: imageUrl
+        };
+      });
     }
   } catch (error) {
     console.error('Error getting wishlist:', error);
     // Fall back to localStorage if API fails
-    return JSON.parse(localStorage.getItem('wishlist')) || [];
+    const items = JSON.parse(localStorage.getItem('wishlist')) || [];
+    
+    // Ensure all items have proper image URLs
+    return items.map(item => {
+      // Make sure we have a valid image URL
+      let imageUrl = item.image;
+      
+      // Format image URL if needed
+      if (imageUrl && !imageUrl.startsWith('http')) {
+        imageUrl = `http://localhost:8000/storage/${imageUrl}`;
+      }
+      
+      return {
+        ...item,
+        image: imageUrl
+      };
+    });
   }
 };
 

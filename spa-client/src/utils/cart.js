@@ -1,6 +1,8 @@
 /**
  * Cart utility functions for managing the shopping cart
  */
+import axios from 'axios';
+import { getToken, isAuthenticated } from './auth';
 
 /**
  * Add an item to the cart
@@ -12,6 +14,25 @@
  */
 export const addToCart = (product, quantity = 1, size = null, color = null) => {
   try {
+    // Try to add to API if user is authenticated
+    if (isAuthenticated()) {
+      try {
+        // API call to add to cart (background, don't await)
+        axios.post('/api/cart/add-item', {
+          product_id: product.id,
+          quantity: quantity
+        }, {
+          headers: {
+            'Authorization': `Bearer ${getToken()}`
+          }
+        }).catch(error => {
+          console.error('Error adding item to cart via API:', error);
+        });
+      } catch (apiError) {
+        console.error('Failed to add to cart via API:', apiError);
+      }
+    }
+    
     // Get current cart from localStorage
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
     
@@ -64,7 +85,7 @@ export const addToCart = (product, quantity = 1, size = null, color = null) => {
         id: product.id,
         name: product.name,
         price: product.on_sale && product.discount_price ? product.discount_price : product.price,
-        image: product.image || product.thumbnail,
+        image: product.image || (product.image_url ? product.image_url : product.thumbnail),
         quantity: quantity,
         size: size,
         color: color,
@@ -260,7 +281,7 @@ export const buyNow = (product, quantity = 1, size = null, color = null) => {
       id: product.id,
       name: product.name,
       price: product.on_sale && product.discount_price ? product.discount_price : product.price,
-      image: product.image || product.thumbnail,
+      image: product.image || (product.image_url ? product.image_url : product.thumbnail),
       quantity: quantity,
       size: size,
       color: color,

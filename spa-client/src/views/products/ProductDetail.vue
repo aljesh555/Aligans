@@ -636,9 +636,9 @@
 
     <!-- Custom Notification Popup -->
     <transition name="fade">
-      <div v-if="notification.show" class="fixed inset-0 flex items-center justify-center z-50 p-4">
+      <div v-if="notification.show" class="fixed inset-0 flex items-center justify-center z-[9999] p-4">
         <div class="absolute inset-0 bg-black bg-opacity-50" @click="closeNotification"></div>
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full relative overflow-hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full relative overflow-hidden mt-20">
           <!-- Colored header based on notification type -->
           <div :class="`h-1.5 w-full ${notification.type === 'error' ? 'bg-red-500' : notification.type === 'success' ? 'bg-green-500' : 'bg-blue-500'}`"></div>
           
@@ -1413,41 +1413,57 @@ export default {
     };
 
     const toggleWishlist = async () => {
-      if (!product.value) return;
-      
-      // Create a copy of product data for the wishlist
-      const productData = {
+      try {
+        // Create a product object with the correct image URL
+        const productWithCorrectImage = {
+          ...product.value,
         id: product.value.id,
         name: product.value.name,
         price: product.value.price,
-        image: product.value.image_url || product.value.thumbnail
+          image: getImageUrl(product.value.image_url), // Ensure we're using the same image URL displayed in the UI
+          image_url: getImageUrl(product.value.image_url) // Add both formats to be safe
       };
       
-      // Toggle product in wishlist: remove if exists, add if doesn't
+        console.log('Updating wishlist with image URL:', productWithCorrectImage.image);
+        
       if (inWishlist.value) {
         await removeFromWishlist(product.value.id);
         inWishlist.value = false;
+          
+          // Show success notification
+          showNotification({
+            type: 'info',
+            title: 'Removed from Wishlist',
+            message: `${product.value.name} has been removed from your wishlist.`
+          });
       } else {
-        await addToWishlist(productData);
+          await addToWishlist(productWithCorrectImage);
         inWishlist.value = true;
-      }
-      
-      // Update the wishlist count immediately
-      wishlistCount.value = getWishlistCountSync();
-      
-      // Dispatch event to update wishlist count in header
-      console.log('Dispatching wishlist-updated event');
+          
+          // Show success notification
+          showNotification({
+            type: 'success',
+            title: 'Added to Wishlist',
+            message: `${product.value.name} has been added to your wishlist.`,
+            actionText: 'View Wishlist',
+            showCancel: true,
+            cancelText: 'Continue Shopping',
+            action: () => { router.push('/wishlist'); }
+          });
+        }
+        
+        // Force update wishlist count in header
       document.dispatchEvent(new CustomEvent('wishlist-updated'));
       
-      // Show visual feedback on the wishlist button
-      const wishlistButton = document.querySelector('[data-wishlist-toggle]');
-      if (wishlistButton) {
-        if (inWishlist.value) {
-          wishlistButton.classList.add('pulse-animation');
-          setTimeout(() => {
-            wishlistButton.classList.remove('pulse-animation');
-          }, 1000);
-        }
+      } catch (error) {
+        console.error('Error updating wishlist:', error);
+        
+        // Show error notification
+        showNotification({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to update wishlist. Please try again later.'
+        });
       }
     };
 
@@ -1810,6 +1826,34 @@ export default {
   overflow: hidden;
 }
 
+/* Notification popup styles */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.fade-enter-to,
+.fade-leave-from {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Make sure notifications appear above all elements */
+[v-if="notification.show"] {
+  z-index: 9999 !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
 .pulse-animation {
   animation: pulse 1s;
 }
@@ -1829,23 +1873,5 @@ export default {
     transform: scale(1);
     box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
   }
-}
-
-/* Modal Transition Animations */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s, transform 0.3s;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: scale(0.95);
-}
-
-.fade-enter-to,
-.fade-leave-from {
-  opacity: 1;
-  transform: scale(1);
 }
 </style> 

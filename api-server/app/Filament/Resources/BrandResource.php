@@ -10,9 +10,12 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
+use App\Filament\Resources\Concerns\FixesImageUploads;
 
 class BrandResource extends Resource
 {
+    use FixesImageUploads;
+    
     protected static ?string $model = Brand::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-tag';
@@ -42,11 +45,11 @@ class BrandResource extends Resource
                                     ->unique(ignoreRecord: true),
                             ]),
 
-                        Forms\Components\FileUpload::make('logo_url')
-                            ->label('Brand Logo')
-                            ->image()
-                            ->imageEditor()
-                            ->directory('brands')
+                        static::fixImageUpload(
+                            Forms\Components\FileUpload::make('logo_url')
+                                ->label('Brand Logo'),
+                            'brands'
+                        )
                             ->columnSpanFull(),
 
                         Forms\Components\RichEditor::make('description')

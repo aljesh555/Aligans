@@ -104,4 +104,42 @@ class Product extends Model
     {
         return $this->hasMany(ProductImage::class)->orderBy('sort_order');
     }
+    
+    /**
+     * Properly handle product image storage when setting the image_url attribute
+     *
+     * @param mixed $value
+     * @return void
+     */
+    public function setImageUrlAttribute($value)
+    {
+        // Log what we're receiving for debugging
+        \Illuminate\Support\Facades\Log::info('Setting product image_url', [
+            'product_id' => $this->id ?? 'new',
+            'value_type' => gettype($value),
+            'is_array' => is_array($value),
+            'value' => is_scalar($value) ? $value : json_encode($value)
+        ]);
+        
+        // If value is null or empty, clear the image
+        if (empty($value) || $value === 'null' || $value === '""') {
+            $this->attributes['image_url'] = null;
+            return;
+        }
+        
+        // Handle Livewire/Filament temp uploads array
+        if (is_array($value)) {
+            // If it's a single file in an array, extract it
+            if (count($value) === 1) {
+                $this->attributes['image_url'] = reset($value);
+            } else {
+                // First value in the array
+                $this->attributes['image_url'] = $value[0] ?? null;
+            }
+            return;
+        }
+        
+        // For any other value, assign it directly (usually a string with the file path)
+        $this->attributes['image_url'] = $value;
+    }
 }

@@ -3,8 +3,8 @@
     <!-- Loading State -->
     <div v-if="loading" class="flex gap-4 overflow-hidden">
       <div v-for="i in 5" :key="i" class="animate-pulse flex-none w-full sm:w-1/2 md:w-1/3 lg:w-1/5">
-        <div class="bg-gray-200 h-24 rounded mb-2"></div>
-        <div class="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+        <div class="bg-gray-200 h-24 rounded-xl mb-2"></div>
+        <div class="h-4 bg-gray-200 rounded-xl w-3/4 mx-auto"></div>
       </div>
     </div>
     
@@ -23,41 +23,43 @@
       <!-- Previous Button -->
       <button 
         @click="prevSlide" 
-        class="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 focus:outline-none"
-        :class="{'opacity-50 cursor-not-allowed': currentSlide === 0}"
+        class="absolute -left-2 top-1/2 transform -translate-y-1/2 z-10 bg-white bg-opacity-80 backdrop-filter backdrop-blur-md rounded-full p-3 shadow-lg hover:bg-blue-50 focus:outline-none transition-all duration-300"
+        :class="{'opacity-50 cursor-not-allowed': currentSlide === 0, 'hover:scale-110': currentSlide !== 0}"
         :disabled="currentSlide === 0"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
       </button>
       
       <!-- Slider Content -->
-      <div class="overflow-hidden mx-10">
+      <div class="overflow-hidden mx-14">
         <div 
-          class="flex transition-transform duration-500 ease-in-out" 
+          class="flex transition-all duration-700 ease-out" 
           :style="{transform: `translateX(-${currentSlide * 20}%)`}"
         >
           <!-- Brand Item -->
           <div 
-            v-for="brand in brands" 
+            v-for="(brand, index) in brands" 
             :key="brand.id"
-            class="flex-none w-full sm:w-1/2 md:w-1/3 lg:w-1/5 px-2"
+            class="flex-none w-full sm:w-1/2 md:w-1/3 lg:w-1/5 px-3"
           >
             <div 
               @click="navigateToBrand(brand)"
-              class="bg-white rounded-lg shadow-sm hover:shadow-md p-4 text-center cursor-pointer transition-all duration-300 h-full"
+              class="brand-card group bg-white rounded-xl shadow-sm hover:shadow-xl p-6 text-center cursor-pointer transition-all duration-500 h-full flex flex-col items-center justify-center transform hover:-translate-y-2"
+              :style="{animationDelay: `${index * 100}ms`}"
             >
-              <div class="h-16 flex items-center justify-center mb-3">
+              <div class="h-16 flex items-center justify-center mb-4 relative">
+                <div class="absolute inset-0 rounded-full bg-blue-100 opacity-0 group-hover:opacity-20 scale-0 group-hover:scale-100 transition-all duration-500"></div>
                 <img 
                   :src="getBrandLogo(brand)" 
                   :alt="brand.name" 
-                  class="h-full object-contain max-w-full"
+                  class="h-full object-contain max-w-full relative z-10 transform group-hover:scale-110 transition-transform duration-500"
                   @error="handleLogoError"
                 >
               </div>
-              <h3 class="font-medium text-gray-800">{{ brand.name }}</h3>
-              <p v-if="brand.product_count" class="text-sm text-gray-500 mt-1">
+              <h3 class="font-medium text-gray-800 group-hover:text-blue-600 transition-colors duration-300">{{ brand.name }}</h3>
+              <p v-if="brand.product_count" class="text-sm text-gray-500 mt-1 group-hover:text-blue-400 transition-colors duration-300">
                 {{ brand.product_count }} products
               </p>
             </div>
@@ -68,14 +70,26 @@
       <!-- Next Button -->
       <button 
         @click="nextSlide" 
-        class="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 focus:outline-none"
-        :class="{'opacity-50 cursor-not-allowed': currentSlide >= maxSlide}"
+        class="absolute -right-2 top-1/2 transform -translate-y-1/2 z-10 bg-white bg-opacity-80 backdrop-filter backdrop-blur-md rounded-full p-3 shadow-lg hover:bg-blue-50 focus:outline-none transition-all duration-300"
+        :class="{'opacity-50 cursor-not-allowed': currentSlide >= maxSlide, 'hover:scale-110': currentSlide < maxSlide}"
         :disabled="currentSlide >= maxSlide"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
         </svg>
       </button>
+      
+      <!-- Indicator Dots -->
+      <div class="flex justify-center mt-8 space-x-2">
+        <button
+          v-for="index in maxSlide + 1"
+          :key="index"
+          @click="currentSlide = index - 1"
+          class="w-2.5 h-2.5 rounded-full transition-all duration-300 focus:outline-none"
+          :class="currentSlide === index - 1 ? 'bg-blue-600 w-8' : 'bg-gray-300 hover:bg-gray-400'"
+          :aria-label="`Go to slide ${index}`"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -234,4 +248,27 @@ export default {
     }
   }
 };
-</script> 
+</script>
+
+<style scoped>
+.brand-card {
+  animation: fadeInUp 0.6s both;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth slide transitions */
+.transition-all {
+  will-change: transform;
+}
+</style> 
